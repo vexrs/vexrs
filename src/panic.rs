@@ -13,7 +13,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     serial.write_data(DataType::Print, data.as_bytes().to_vec());
     
     // Block for 50 ms to wait for the serial data to go through
-    ceros_core::util::block(50);
+    crate::util::block(50);
 
     loop {}
 }
