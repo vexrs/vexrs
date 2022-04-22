@@ -1,6 +1,1 @@
-
-
-#[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    loop {}
-}
+use ceros_serial::{protocol::{DataType, CEROSSerial}, serial::Serial};
