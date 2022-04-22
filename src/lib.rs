@@ -17,3 +17,4 @@ mod alloc_a;
 mod panic;
 
 // This contains a few utilities for use in user code.
+pub mod util;
