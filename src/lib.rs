@@ -1,5 +1,8 @@
 #![no_std]
-#![feature(default_alloc_error_handler)]
+#![feature(alloc_error_handler)]
+
+
+extern crate alloc;
 
 // Use this so any crates using ceros-core will
 // automatically use the newlib-allocator
