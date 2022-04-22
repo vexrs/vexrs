@@ -1,0 +1,29 @@
+[package]
+name = "ceros-core"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+
+[dependencies]
+vexv5rt = { git = "ssh://git@github.com/Culpeper-Robotics/vexv5rt" }
+newlib-alloc = { version = "0.1.0", optional = true }
+ceros-serial = { git = "ssh://git@github.com/Culpeper-Robotics/ceros-serial", features = ["v5"], optional = true }
+
+
+[features]
+default = ["alloc", "panic"]
+alloc = ["dep:newlib-alloc"]
+panic = ["dep:ceros-serial"]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
