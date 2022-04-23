@@ -19,6 +19,12 @@ mod panic;
 // This contains a few utilities for use in user code.
 pub mod util;
 
+// This module contains the main CEROS runtime
+pub mod runtime;
 
-// This module contains utilities for the green threading implementation.
-pub mod task;
+// Make the main function from the runtime public
+pub use runtime::main;
+
+// This module contains a utility handler for printing to the serial port
+// using standard rust macros.
+pub mod print;
