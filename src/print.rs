@@ -1,5 +1,5 @@
 // Println implementations.
-
+use core::fmt::Display;
 
 #[macro_export]
 macro_rules! print {
@@ -8,7 +8,7 @@ macro_rules! print {
         {
             let mut serial_port = ceros_serial::serial::Serial::new();
             let mut serial = ceros_serial::protocol::CEROSSerial::new(&mut serial_port);
-            serial.write_data(ceros_serial::protocol::DataType::Print, format_args!($($arg)*));
+            serial.write_data(ceros_serial::protocol::DataType::Print, format!("{}",format_args!($($arg)*)).as_bytes().to_vec());
         }
     };
 }
@@ -20,7 +20,7 @@ macro_rules! println {
         {
             let mut serial_port = ceros_serial::serial::Serial::new();
             let mut serial = ceros_serial::protocol::CEROSSerial::new(&mut serial_port);
-            serial.write_data(ceros_serial::protocol::DataType::Print, format!("{}\n",format_args!($($arg)*)));
+            serial.write_data(ceros_serial::protocol::DataType::Print, format!("{}\n",format_args!($($arg)*)).as_bytes().to_vec());
         }
     };
 }
@@ -32,7 +32,7 @@ macro_rules! eprint {
         {
             let mut serial_port = ceros_serial::serial::Serial::new();
             let mut serial = ceros_serial::protocol::CEROSSerial::new(&mut serial_port);
-            serial.write_data(ceros_serial::protocol::DataType::Error, format_args!($($arg)*));
+            serial.write_data(ceros_serial::protocol::DataType::Error, format!("{}",format_args!($($arg)*)).as_bytes().to_vec());
         }
     };
 }
@@ -44,7 +44,7 @@ macro_rules! eprintln {
         {
             let mut serial_port = ceros_serial::serial::Serial::new();
             let mut serial = ceros_serial::protocol::CEROSSerial::new(&mut serial_port);
-            serial.write_data(ceros_serial::protocol::DataType::Error, format!("{}\n",format_args!($($arg)*)));
+            serial.write_data(ceros_serial::protocol::DataType::Error, format!("{}\n",format_args!($($arg)*)).as_bytes().to_vec());
         }
     };
 }

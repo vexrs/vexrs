@@ -1,6 +1,6 @@
 #![no_std]
 #![feature(alloc_error_handler)]
-
+#![feature(asm_const)]
 #[macro_use]
 extern crate alloc;
 
@@ -28,3 +28,7 @@ pub use runtime::main;
 // This module contains a utility handler for printing to the serial port
 // using standard rust macros.
 pub mod print;
+
+// This crates prelude contains all the types and functions that are
+// commonly used in user code.
+pub mod prelude;
