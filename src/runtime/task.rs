@@ -90,7 +90,7 @@ impl Task {
 
 /// Unsafe function that switches to a different task's context.
 /// Internal use only. This does not save the current context, only loads a new one.
-/// The stack pointer of the new context should be pushed to the current stack
+/// The stack pointer of the new context should be passed as r0
 #[naked]
 #[no_mangle]
 pub unsafe extern "C" fn load_context() {
@@ -98,8 +98,8 @@ pub unsafe extern "C" fn load_context() {
     // Pop all required registers
     asm!(
         "mov sp, r0",
-        "pop {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr, pc}}",
-        //in(reg) ctx.sp,
+        "pop {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12}}",
+        "pop {{lr, pc}}",
         options(noreturn),
     );
     

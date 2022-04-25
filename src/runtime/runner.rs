@@ -91,27 +91,28 @@ impl Runtime {
         
         // Get the stack pointer of the new context
         let sp = self.tasks[self.current].context.sp;
-        
-        println!("reached");
-        crate::util::block(1000);
 
 
 
+        // Run the actual context switch
         unsafe {
-            
-            asm!(
-                "ldr r0, =2",
-                "push {{r0, {0}, r12, r11, r10, r9, r8, r7, r6, r5, r4, r3, r2, r1, r0}}",
-                "mov {1}, sp",
-                "mov r0, {2}",
-                "b load_context",
+            let mut spr = core::ptr::addr_of!(self.tasks[old].context.sp);
+            asm!("/* {0} */",
+                "ldr {1}, =2f",
+                "push {{{1}}}", // For some reason we have to push these two separately
+                "push {{{0}}}",
+                "push {{r12, r11, r10, r9, r8, r7, r6, r5, r4, r3, r2, r1, r0}}",
+                "str sp, [{2}]",
+                "mov sp, {3}",
+                "pop {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr, pc}}",
                 "2:",
                 in(reg) guard as u32,
-                out(reg) self.tasks[old].context.sp,
+                out(reg) _, // We just want to reserve a register to use
+                out(reg) spr,
                 in(reg) sp,
             );
         }
-        
+
         true
     }
 
