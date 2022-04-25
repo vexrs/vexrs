@@ -18,8 +18,17 @@ pub const DEFAULT_STACK_SIZE: usize = 0x2000;
 pub const MAX_TASKS: usize = 8;
 
 
-
-
+// A utility function to get the stack pointer
+pub fn get_stack_pointer() -> u32 {
+    unsafe {
+        let mut sp = 0u32;
+        asm!(
+            "mov {}, r13",
+            out(reg) sp
+        );
+        sp
+    }
+}
 
 /// The entry point to the CEROS runtime.
 pub fn main(user_entry: fn()) {
@@ -35,14 +44,11 @@ pub fn main(user_entry: fn()) {
     
     println!("ok");
 
-    runtime.context_switch();
-
-    println!("switch finished");
-    crate::util::block(1000);
-    // Wait
     loop {
-        
-        crate::util::block(10);
+        println!("Hello from os task!");
+        println!("{}", get_stack_pointer());
+        crate::util::block(1000);
+        crate::runtime::runner::get_runtime().context_switch();
     }
 }
 
