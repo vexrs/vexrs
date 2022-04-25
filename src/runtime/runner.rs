@@ -7,10 +7,9 @@ use crate::println;
 use super::{task::{Task, TaskState, TaskContext}, MAX_TASKS, DEFAULT_STACK_SIZE, guard};
 
 
-// The global runtime
-static mut RUNTIME: usize = 0;
 
 /// A very simple round-robin scheduler
+#[derive(Default)]
 pub struct Runtime {
     pub tasks: Vec<Task>,
     current: usize
@@ -43,15 +42,12 @@ impl Runtime {
         }
     }
 
-
-
-
     /// This function sets our runtime to the global runtime variable
     /// and registers the timer interupt
     pub fn init(&self) {
         unsafe {
             // Set the global runtime
-            RUNTIME = self as *const Runtime as usize;
+            super::RUNTIME = self as *const Runtime;
             
             // Register the timer interrupt
             //vexv5rt::vexSystemTimerReinitForRtos(1, Some(tick));
@@ -62,18 +58,26 @@ impl Runtime {
     /// Switches to the next context
     pub fn context_switch(&mut self) -> bool {
 
+        // Set this task as ready if it is running
+        // If not, keep it the same
+        self.tasks[self.current].state = match self.tasks[self.current].state {
+            TaskState::Running => TaskState::Ready,
+            _ => self.tasks[self.current].state,
+        };
+
         // Find the next task to run
+        // If we find a ready task, 
         let mut pos = self.current;
         loop {
             pos += 1;
             if pos >= self.tasks.len() {
                 pos = 0;
             }
-            if pos == self.current {
-                return false;
-            }
             if self.tasks[pos].state == TaskState::Ready {
                 break;
+            }
+            if pos == self.current {
+                return false;
             }
         }
 
@@ -83,8 +87,6 @@ impl Runtime {
         // And set the current index
         self.current = pos;
         
-        // Set the old task as ready
-        self.tasks[old].state = TaskState::Ready;
         
         // And the new one as running
         self.tasks[self.current].state = TaskState::Running;
@@ -96,7 +98,6 @@ impl Runtime {
 
         // Run the actual context switch
         unsafe {
-            let mut spr = core::ptr::addr_of!(self.tasks[old].context.sp);
             asm!("/* {0} */",
                 "ldr {1}, =2f",
                 "push {{{1}}}", // For some reason we have to push these two separately
@@ -106,9 +107,9 @@ impl Runtime {
                 "mov sp, {3}",
                 "pop {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr, pc}}",
                 "2:",
-                in(reg) guard as u32,
+                in(reg) guard as usize,
                 out(reg) _, // We just want to reserve a register to use
-                out(reg) spr,
+                in(reg) core::ptr::addr_of!(self.tasks[old].context.sp),
                 in(reg) sp,
             );
         }
@@ -120,7 +121,6 @@ impl Runtime {
     pub fn kill_current(&mut self) {
         self.tasks[self.current].state = TaskState::Available;
     }
-
 
     /// Spawns a new task
     pub fn spawn(&mut self, entry: fn()) -> Task {
@@ -143,14 +143,14 @@ impl Runtime {
 
         
         // Get the stack pointer
-        let sp = unsafe { self.tasks[pos].stack.as_mut_ptr().offset(self.tasks[pos].stack.len() as isize)} as *mut u32;
+        let sp = unsafe { self.tasks[pos].stack.as_mut_ptr().add(self.tasks[pos].stack.len())} as *mut usize;
         
 
         // Push pc as the entry point
-        unsafe { core::ptr::write(sp.offset(-1), entry as u32);}
+        unsafe { core::ptr::write(sp.offset(-1), entry as usize);}
 
         // The guard function is here to prevent the task from returning to nothing.
-        unsafe { core::ptr::write(sp.offset(-2), guard as u32) }
+        unsafe { core::ptr::write(sp.offset(-2), guard as usize) }
         println!("0x{:x}", sp as u32);
         // Set the stack pointer
         self.tasks[pos].context = TaskContext {
@@ -166,28 +166,14 @@ impl Runtime {
 
 
 
-/// Gets the global runtime
-pub fn get_runtime() -> &'static mut Runtime {
-    unsafe {
-        let rt = RUNTIME as *mut Runtime;
-        &mut *rt
-    }
-}
+
 
 
 /// This is the main tick function, called on every timer tick
 #[no_mangle]
-pub unsafe extern "C" fn tick(data: *mut c_void) {
+unsafe extern "C" fn tick(_data: *mut c_void) {
 
     
-
-    // Get the runtime
-    let rt = get_runtime();
-    
-
-    // Switch to the next context
-    rt.context_switch();
-
     // Clear the timer interrupt
     vexv5rt::vexSystemTimerClearInterrupt();
 

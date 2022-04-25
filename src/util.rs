@@ -1,3 +1,5 @@
+pub use crate::runtime::util::*;
+
 
 pub fn block(ms: u32) {
     let time = unsafe{vexv5rt::vexSystemTimeGet()};

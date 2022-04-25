@@ -1,5 +1,3 @@
-use core::arch::asm;
-use crate::println;
 use alloc::vec::Vec;
 
 use super::DEFAULT_STACK_SIZE;
@@ -11,7 +9,7 @@ use super::guard;
 
 /// The state of a task determines when it should be entered again
 /// and if it is still running.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TaskState {
     /// In the ready state, a task is waiting for it's turn on the scheduler
     Ready,
@@ -49,7 +47,7 @@ impl Task {
     /// Creates a new, empty task
     pub fn new(id: usize) -> Task {
         Task {
-            id: id,
+            id,
             stack: vec![0u8; DEFAULT_STACK_SIZE],
             context: TaskContext::default(),
             state: TaskState::Available
@@ -61,15 +59,15 @@ impl Task {
         
         // Create a new stack for this task
         let mut stack: Vec<u8> = vec![0; DEFAULT_STACK_SIZE];
-        let sp = unsafe { stack.as_mut_ptr().offset(stack.len() as isize)} as *mut u32;
+        let sp = unsafe { stack.as_mut_ptr().add(stack.len())} as *mut usize;
 
         
 
         // Push pc as the entry point
-        unsafe { core::ptr::write(sp.offset(-1), entry as u32);}
+        unsafe { core::ptr::write(sp.offset(-1), entry as usize);}
 
         // The guard function is here to prevent the task from returning to nothing.
-        unsafe { core::ptr::write(sp.offset(-2), guard as u32) }
+        unsafe { core::ptr::write(sp.offset(-2), guard as usize) }
         
         
         // Create a context
@@ -79,7 +77,7 @@ impl Task {
         
         Task {
             id,
-            stack: stack,
+            stack,
             context,
             state: TaskState::Ready,
         }
@@ -88,19 +86,3 @@ impl Task {
 
 
 
-/// Unsafe function that switches to a different task's context.
-/// Internal use only. This does not save the current context, only loads a new one.
-/// The stack pointer of the new context should be passed as r0
-#[naked]
-#[no_mangle]
-pub unsafe extern "C" fn load_context() {
-    // Set the stack pointer
-    // Pop all required registers
-    asm!(
-        "mov sp, r0",
-        "pop {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12}}",
-        "pop {{lr, pc}}",
-        options(noreturn),
-    );
-    
-}

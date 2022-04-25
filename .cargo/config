@@ -1,0 +1,8 @@
+[build]
+target = ".v5/armv7a-vex-eabi.json"
+
+[unstable]
+build-std = ["core", "alloc"]
+
+[target.armv7a-vex-eabi]
+runner = "cargo v5 cargo-hook"

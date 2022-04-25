@@ -1,41 +1,36 @@
 // The core CEROS runtime support library.
 
-use core::{arch::asm, fmt::Debug};
-
-use crate::{println, print};
+use crate::{println, eprintln};
 
 
+// A basic task structure implementation
 pub mod task;
+
+// The actual runtime, including a simple round-robin scheduler.
 pub mod runner;
+
+// Utility files for interacting with the runtime
+pub mod util;
 
 use alloc::boxed::Box;
 use runner::Runtime;
 
-// A default stack size of 8192 bytes should be plenty
+// A default stack size of 8192 bytes should be good.
+// This will almost certainly made larger later, but we are using this for ease
+// of development, and because this is what 
 pub const DEFAULT_STACK_SIZE: usize = 0x2000;
 
 // 8 Seems like a good number of tasks. We can increase this if we want.
 pub const MAX_TASKS: usize = 8;
 
 
-// A utility function to get the stack pointer
-pub fn get_stack_pointer() -> u32 {
-    unsafe {
-        let mut sp = 0u32;
-        asm!(
-            "mov {}, r13",
-            out(reg) sp
-        );
-        sp
-    }
-}
+// The global runtime singleton. This is a pointer to the actual runtime
+static mut RUNTIME: *const Runtime = 0 as *const Runtime;
+
 
 /// The entry point to the CEROS runtime.
 pub fn main(user_entry: fn()) {
-
-    
-    
-    let mut runtime = Runtime::new();
+    let mut runtime = Box::new(Runtime::new());
 
     // Initialize the runtime
     runtime.init();
@@ -46,11 +41,10 @@ pub fn main(user_entry: fn()) {
 
     loop {
         println!("Hello from os task!");
-        println!("{}", get_stack_pointer());
         unsafe {vexv5rt::vexDisplayCenteredString(1, "Hello from os task!!!\0".as_ptr());}
         
-        ceros_core::util::block(1000);
-        ceros_core::runtime::runner::get_runtime().context_switch();
+        crate::util::block(1000);
+        crate::util::get_runtime().context_switch();
     }
 }
 
@@ -58,7 +52,7 @@ pub fn main(user_entry: fn()) {
 /// a function returns and there is nothing above the callstack.
 #[no_mangle]
 unsafe extern "C"  fn guard() {
-    let rt = runner::get_runtime();
+    let rt = crate::util::get_runtime();
 
     // Kill the current task
     rt.kill_current();
@@ -66,7 +60,11 @@ unsafe extern "C"  fn guard() {
     // One last context switch
     rt.context_switch();
 
-    println!("exit");
-    crate::util::block(1000);
-    loop {}
+    // If we managed to get this far, the guard has failed for some reason and
+    // we should print it as an error. This could be because all tasks have exited.
+    // Just in case, we will continue to context switch forever.
+    loop {
+        eprintln!("guard failed");
+        rt.context_switch();
+    }
 }

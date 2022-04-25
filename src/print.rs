@@ -1,5 +1,4 @@
 // Println implementations.
-use core::fmt::Display;
 
 #[macro_export]
 macro_rules! print {
