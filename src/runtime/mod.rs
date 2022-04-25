@@ -1,6 +1,6 @@
 // The core CEROS runtime support library.
 
-use core::arch::asm;
+use core::{arch::asm, fmt::Debug};
 
 use crate::{println, print};
 
@@ -19,51 +19,45 @@ pub const MAX_TASKS: usize = 8;
 
 
 
-/// Basic runtime initialization
-fn init(user_entry: fn(), main_entry: fn()) {
-    // Create a new runtime
-    let mut runtime = Box::new(Runtime::new());
 
-    // Spawn the initial user task
-    let task = runtime.spawn(user_entry);
-
-    // Jump to the new task's stack
-    unsafe {
-        asm!(
-            "mov lr, {0}",
-            "mov sp, {1}",
-            "bx {2}",
-            in(reg) guard as u32,
-            in(reg) task.context.sp,
-            in(reg) main_entry as u32,
-            
-        );
-    }
-}
 
 /// The entry point to the CEROS runtime.
 pub fn main(user_entry: fn()) {
+
     
+    
+    let mut runtime = Runtime::new();
+
     // Initialize the runtime
-    // This will not return.
-    // It changes to a different stack, where the return
-    // point will be a stack guard that hangs forever.
-    init(user_entry, || {
+    runtime.init();
 
-        let rt = runner::get_runtime();
+    runtime.spawn(user_entry);
+    
+    println!("ok");
 
-        rt.context_switch();
+    runtime.context_switch();
+
+    println!("switch finished");
+    crate::util::block(1000);
+    // Wait
+    loop {
         
-    });
-
-    
-    
+        crate::util::block(10);
+    }
 }
 
 /// This function is the guard for the scheduler. It is called when
 /// a function returns and there is nothing above the callstack.
 #[no_mangle]
 unsafe extern "C"  fn guard() {
+    let rt = runner::get_runtime();
+
+    // Kill the current task
+    rt.kill_current();
+
+    // One last context switch
+    rt.context_switch();
+
     println!("exit");
     crate::util::block(1000);
     loop {}

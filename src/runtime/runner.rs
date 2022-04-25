@@ -12,7 +12,7 @@ static mut RUNTIME: usize = 0;
 
 /// A very simple round-robin scheduler
 pub struct Runtime {
-    tasks: Vec<Task>,
+    pub tasks: Vec<Task>,
     current: usize
 }
 
@@ -38,7 +38,7 @@ impl Runtime {
         
 
         Runtime {
-            tasks: tasks,
+            tasks: tasks.clone(),
             current: 0
         }
     }
@@ -54,20 +54,71 @@ impl Runtime {
             RUNTIME = self as *const Runtime as usize;
             
             // Register the timer interrupt
-            vexv5rt::vexSystemTimerReinitForRtos(1, Some(tick));
+            //vexv5rt::vexSystemTimerReinitForRtos(1, Some(tick));
             
         }
     }
 
     /// Switches to the next context
-    pub fn context_switch(&mut self) {
+    pub fn context_switch(&mut self) -> bool {
 
-        println!("Begin CTX switch: {:?}", self.tasks.clone());
+        // Find the next task to run
+        let mut pos = self.current;
+        loop {
+            pos += 1;
+            if pos >= self.tasks.len() {
+                pos = 0;
+            }
+            if pos == self.current {
+                return false;
+            }
+            if self.tasks[pos].state == TaskState::Ready {
+                break;
+            }
+        }
 
+        // Save the old index
+        let old = self.current;
         
+        // And set the current index
+        self.current = pos;
         
+        // Set the old task as ready
+        self.tasks[old].state = TaskState::Ready;
+        
+        // And the new one as running
+        self.tasks[self.current].state = TaskState::Running;
+        
+        // Get the stack pointer of the new context
+        let sp = self.tasks[self.current].context.sp;
+        
+        println!("reached");
+        crate::util::block(1000);
+
+
+
+        unsafe {
+            
+            asm!(
+                "ldr r0, =2",
+                "push {{r0, {0}, r12, r11, r10, r9, r8, r7, r6, r5, r4, r3, r2, r1, r0}}",
+                "mov {1}, sp",
+                "mov r0, {2}",
+                "b load_context",
+                "2:",
+                in(reg) guard as u32,
+                out(reg) self.tasks[old].context.sp,
+                in(reg) sp,
+            );
+        }
+        
+        true
     }
 
+    /// Kills the current task
+    pub fn kill_current(&mut self) {
+        self.tasks[self.current].state = TaskState::Available;
+    }
 
 
     /// Spawns a new task
@@ -80,7 +131,6 @@ impl Runtime {
                 pos = 0;
             }
             if self.tasks[pos].state == TaskState::Available {
-                self.current = pos;
                 break;
             }
         }
@@ -88,7 +138,7 @@ impl Runtime {
         // Initialize it with the new entry
 
         // Clear it's stack
-        self.tasks[pos].stack.clear();
+        self.tasks[pos].stack = vec![0u8; DEFAULT_STACK_SIZE];
 
         
         // Get the stack pointer
@@ -100,7 +150,7 @@ impl Runtime {
 
         // The guard function is here to prevent the task from returning to nothing.
         unsafe { core::ptr::write(sp.offset(-2), guard as u32) }
-
+        println!("0x{:x}", sp as u32);
         // Set the stack pointer
         self.tasks[pos].context = TaskContext {
             sp: unsafe { sp.offset(-15) } as u32,
