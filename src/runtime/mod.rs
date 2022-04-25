@@ -47,8 +47,10 @@ pub fn main(user_entry: fn()) {
     loop {
         println!("Hello from os task!");
         println!("{}", get_stack_pointer());
-        crate::util::block(1000);
-        crate::runtime::runner::get_runtime().context_switch();
+        unsafe {vexv5rt::vexDisplayCenteredString(1, "Hello from os task!!!\0".as_ptr());}
+        
+        ceros_core::util::block(1000);
+        ceros_core::runtime::runner::get_runtime().context_switch();
     }
 }
 
