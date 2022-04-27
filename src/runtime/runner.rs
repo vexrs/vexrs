@@ -56,7 +56,7 @@ impl Runtime {
     }
 
     /// Switches to the next context
-    pub fn context_switch(&mut self) -> bool {
+    pub fn yield_t(&mut self) -> bool {
 
         // Set this task as ready if it is running
         // If not, keep it the same
@@ -73,6 +73,7 @@ impl Runtime {
             if pos >= self.tasks.len() {
                 pos = 0;
             }
+            
             if self.tasks[pos].state == TaskState::Ready {
                 break;
             }
@@ -91,8 +92,6 @@ impl Runtime {
         // And the new one as running
         self.tasks[self.current].state = TaskState::Running;
         
-        // Get the stack pointer of the new context
-        let sp = self.tasks[self.current].context.sp;
 
 
 
@@ -110,13 +109,15 @@ impl Runtime {
                 in(reg) guard as usize,
                 out(reg) _, // We just want to reserve a register to use
                 in(reg) core::ptr::addr_of!(self.tasks[old].context.sp),
-                in(reg) sp,
+                in(reg) self.tasks[self.current].context.sp,
             );
         }
 
         true
     }
 
+
+    
     /// Kills the current task
     pub fn kill_current(&mut self) {
         self.tasks[self.current].state = TaskState::Available;
@@ -166,15 +167,11 @@ impl Runtime {
 
 
 
-
-
-
 /// This is the main tick function, called on every timer tick
 #[no_mangle]
 unsafe extern "C" fn tick(_data: *mut c_void) {
-
     
     // Clear the timer interrupt
     vexv5rt::vexSystemTimerClearInterrupt();
-
+    
 }

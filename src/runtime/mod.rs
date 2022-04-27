@@ -41,10 +41,10 @@ pub fn main(user_entry: fn()) {
 
     loop {
         println!("Hello from os task!");
+        println!("{}", crate::util::get_stack_pointer());
         unsafe {vexv5rt::vexDisplayCenteredString(1, "Hello from os task!!!\0".as_ptr());}
+        crate::util::get_runtime().yield_t();
         
-        crate::util::block(1000);
-        crate::util::get_runtime().context_switch();
     }
 }
 
@@ -58,13 +58,13 @@ unsafe extern "C"  fn guard() {
     rt.kill_current();
 
     // One last context switch
-    rt.context_switch();
+    rt.yield_t();
 
     // If we managed to get this far, the guard has failed for some reason and
     // we should print it as an error. This could be because all tasks have exited.
     // Just in case, we will continue to context switch forever.
     loop {
         eprintln!("guard failed");
-        rt.context_switch();
+        rt.yield_t();
     }
 }
