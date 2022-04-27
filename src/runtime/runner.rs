@@ -55,29 +55,51 @@ impl Runtime {
         }
     }
 
-    /// Switches to the next context
-    pub fn yield_t(&mut self) -> bool {
 
-        // Set this task as ready if it is running
-        // If not, keep it the same
-        self.tasks[self.current].state = match self.tasks[self.current].state {
-            TaskState::Running => TaskState::Ready,
-            _ => self.tasks[self.current].state,
-        };
+    /// Yields the current task, setting it as ready to be returned to on any notice.
+    pub fn yield_t(&mut self) {
+        self.yield_as(TaskState::Ready);
+    }
+
+    /// Yields the current task, and will not resume it until a time has been reached
+    pub fn yield_until(&mut self, t: u32) {
+        self.yield_as(TaskState::WaitUntil(t));
+    }
+
+    /// Yields the current task, and will not resume until the specified delay has elapsed.
+    pub fn yield_for(&mut self, t: u32) {
+        self.yield_until(unsafe {
+            vexv5rt::vexSystemTimeGet() + t
+        });
+    }
+
+    /// Switches to the next context, saving this task's state specialy.
+    fn yield_as(&mut self, state: TaskState) -> bool {
+
+        // Set this task state
+        self.tasks[self.current].state = state;
 
         // Find the next task to run
         // If we find a ready task, 
         let mut pos = self.current;
+        let mut has_waiting_task = false;
         loop {
             pos += 1;
             if pos >= self.tasks.len() {
                 pos = 0;
             }
             
+            if let TaskState::WaitUntil(t) = self.tasks[pos].state {
+                if unsafe { vexv5rt::vexSystemTimeGet() } >= t {
+                    break;
+                } else {
+                    has_waiting_task = true;
+                }
+            }
             if self.tasks[pos].state == TaskState::Ready {
                 break;
             }
-            if pos == self.current {
+            if pos == self.current && !has_waiting_task {
                 return false;
             }
         }

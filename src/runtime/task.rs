@@ -16,7 +16,9 @@ pub enum TaskState {
     /// A running task is the currently executing task
     Running,
     /// An available task has nothing assigned to it.
-    Available
+    Available,
+    /// A task that is waiting until a specific time
+    WaitUntil(u32),
 }
 
 /// The context of a task contains all registers that need to be restored
