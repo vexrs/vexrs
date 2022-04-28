@@ -1,7 +1,5 @@
 #![no_std]
 #![feature(alloc_error_handler)]
-#![feature(naked_functions)]
-#![feature(asm_const)]
 #[macro_use]
 extern crate alloc;
 
@@ -33,6 +31,7 @@ pub mod hardware;
 
 // This module contains a utility handler for printing to the serial port
 // using standard rust macros.
+#[cfg(feature="print")]
 pub mod print;
 
 // This crates prelude contains all the types and functions that are

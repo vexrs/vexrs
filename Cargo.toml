@@ -8,15 +8,18 @@ edition = "2021"
 
 
 [dependencies]
-vexv5rt = { git = "ssh://git@github.com/Culpeper-Robotics/vexv5rt" }
+acid_io = { git = "ssh://git@github.com/Culpeper-Robotics/acid_io.git", optional=true }
+ceros-serial = { git = "ssh://git@github.com/Culpeper-Robotics/ceros-serial", optional = true}
 newlib-alloc = { version = "0.1.0", optional = true }
-ceros-serial = { git = "ssh://git@github.com/Culpeper-Robotics/ceros-serial", features = ["v5"], optional = true }
+vexv5rt = { git = "ssh://git@github.com/Culpeper-Robotics/vexv5rt" }
 
 
 [features]
-default = ["alloc", "panic", "green_threads"]
+default = ["alloc", "panic", "print", "serial", "green_threads"]
 alloc = ["dep:newlib-alloc"]
-panic = ["dep:ceros-serial"]
+serial = ["dep:ceros-serial", "dep:acid_io"]
+panic = ["serial"]
+print = ["serial"]
 green_threads = []
 
 [profile.dev]
