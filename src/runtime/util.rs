@@ -24,3 +24,9 @@ pub fn get_stack_pointer() -> u32 {
         sp
     }
 }
+
+/// Sleeps for t miliseconds.
+pub fn sleep(t: u32) {
+    // Yield for t miliseconds
+    get_runtime().yield_for(t);
+}

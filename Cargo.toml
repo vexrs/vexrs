@@ -10,6 +10,7 @@ edition = "2021"
 [dependencies]
 acid_io = { git = "ssh://git@github.com/Culpeper-Robotics/acid_io.git", optional=true }
 ceros-serial = { git = "ssh://git@github.com/Culpeper-Robotics/ceros-serial", optional = true}
+ceros-macro = { git = "ssh://git@github.com/Culpeper-Robotics/ceros-macro" }
 newlib-alloc = { version = "0.1.0", optional = true }
 vexv5rt = { git = "ssh://git@github.com/Culpeper-Robotics/vexv5rt" }
 

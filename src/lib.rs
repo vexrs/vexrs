@@ -1,5 +1,7 @@
 #![no_std]
 #![feature(alloc_error_handler)]
+
+
 #[macro_use]
 extern crate alloc;
 
@@ -37,3 +39,12 @@ pub mod print;
 // This crates prelude contains all the types and functions that are
 // commonly used in user code.
 pub mod prelude;
+
+// The system library containing all system utilities
+mod system;
+
+// Export the ceros_serial main macro
+pub use ceros_macro::ceros_main;
+
+// Export the macros in alloc
+pub use alloc::{format, vec};

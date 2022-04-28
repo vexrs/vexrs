@@ -42,7 +42,7 @@ impl<T> Mutex<T> {
             // Before returning, yield to the next task
             get_runtime().yield_t(); // YIELD POINT
 
-            return MutexGuard { mutex: &self };
+            return MutexGuard { mutex: self };
         }
 
         // Add ourselves to the queue
@@ -58,7 +58,7 @@ impl<T> Mutex<T> {
         *self.lock.borrow_mut() = true;
 
         // Return the mutex guard
-        MutexGuard { mutex: &self }
+        MutexGuard { mutex: self }
     }
 
     /// Releases the lock on the mutex

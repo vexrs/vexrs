@@ -1,7 +1,7 @@
 // The core CEROS runtime support library.
 
 
-use crate::{println, eprintln, runtime::util::get_runtime};
+use crate::{eprintln, system::os_init};
 
 
 // A basic task structure implementation
@@ -16,9 +16,13 @@ pub mod mutex;
 // Utility files for interacting with the runtime
 pub mod util;
 
+// Export most structs
+pub use runner::*;
+pub use task::*;
+pub use util::*;
 
-use alloc::boxed::Box;
-use runner::Runtime;
+// The global runtime singleton. This is a pointer to the actual runtime
+static mut RUNTIME: *const Runtime = 0 as *const Runtime;
 
 // A default stack size of 8192 bytes should be good.
 // This will almost certainly made larger later, but we are using this for ease
@@ -29,28 +33,13 @@ pub const DEFAULT_STACK_SIZE: usize = 0x2000;
 pub const MAX_TASKS: usize = 8;
 
 
-// The global runtime singleton. This is a pointer to the actual runtime
-static mut RUNTIME: *const Runtime = 0 as *const Runtime;
+
 
 
 /// The entry point to the CEROS runtime.
 pub fn main(user_entry: fn()) {
-    let mut runtime = Box::new(Runtime::new());
-
-    // Initialize the runtime
-    runtime.init();
-
-    runtime.spawn(user_entry);
-    
-    println!("ok");
-
-    loop {
-        // Tick the OS here.
-        println!("OS Ping");
-
-        // All loops need to yield
-        get_runtime().yield_t();
-    }
+    // Initialize the os and begin ticking
+    os_init(user_entry);
 }
 
 /// This function is the guard for the scheduler. It is called when

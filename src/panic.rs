@@ -1,4 +1,6 @@
-use crate::eprintln;
+// Panic handler for CEROS
+
+use crate::{eprintln, runtime::get_runtime};
 
 
 
@@ -8,9 +10,10 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
 
     // Print the panic data
     eprintln!("\x07\x1b[1;31mPANIC: {}\x1b[0m", info);
-    
-    // Block for 50 ms to wait for the serial data to go through
-    crate::util::block(50);
+    eprintln!("Panicking Task: {}", get_runtime().current_task());
+
+    // End our current task
+    get_runtime().kill_current();
 
     loop {}
 }
