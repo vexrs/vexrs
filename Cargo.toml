@@ -18,7 +18,6 @@ default = ["alloc", "panic", "green_threads", "sync"]
 alloc = ["dep:newlib-alloc"]
 panic = ["dep:ceros-serial"]
 green_threads = []
-sync = []
 
 [profile.dev]
 panic = "abort"

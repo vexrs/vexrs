@@ -27,9 +27,6 @@ pub mod runtime;
 // Make the main function from the runtime public
 pub use runtime::main;
 
-// Synchronization primitives for use with the green threads runtime
-pub mod sync;
-
 // This module contains a utility handler for printing to the serial port
 // using standard rust macros.
 pub mod print;
