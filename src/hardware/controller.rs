@@ -1,6 +1,7 @@
 // Interfaces for the vex v5 controller
 
-use crate::{runtime::mutex::Mutex, println};
+
+use crate::runtime::mutex::Mutex;
 
 /// The ID of a controller
 #[repr(u8)]
@@ -42,16 +43,20 @@ pub enum ControllerAxis {
     RightY,
 }
 
+
+
 /// Struct that allows user programs to interact with the vex v5 controller
 pub struct Controller {
     id: Mutex<ControllerID>,
+    button_status: Mutex<[bool; 12]>
 }
 
 impl Controller {
     /// Creates a new controller with id.
     pub fn new(id: ControllerID) -> Controller {
         Controller {
-            id: Mutex::new(id)
+            id: Mutex::new(id),
+            button_status: Mutex::new([false; 12]),
         }
     }
 
@@ -80,16 +85,55 @@ impl Controller {
         // Lock the self mutex
         let id = self.id.acquire();
 
+        // Lock the button status
+        let mut button_status = self.button_status.acquire();
+
         // Get the index of the button
         let index = button as u32;
 
-        // Get the button status
-        let button_status = unsafe {
+        // Get the button value
+        let button_value = unsafe {
             vexv5rt::vexControllerGet(*id as u32, index)
         };
 
         // Return the button status as true if it is not zero.
-        button_status != 0
+        button_value != 0
+    }
+
+    /// Returns true if a button has just been pressed
+    pub fn get_button_pressed(&self, button: ControllerButton) -> bool {
+        // Get the value of the button in the cache
+        let btn_status=  self.button_status.acquire()[button as usize - 6];
+
+        // Get the new status
+        let new_value = self.get_digital(button);
+
+        // If the values are different and the new value is true, the button has been newly pressed
+        if (btn_status != new_value) && new_value {
+            // Set it in the cache
+            self.button_status.acquire()[button as usize-6] = new_value;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Returns true if a button has just been released
+    pub fn get_button_released(&self, button: ControllerButton) -> bool {
+        // Get the value of the button in the cache
+        let btn_status=  self.button_status.acquire()[button as usize - 6];
+
+        // Update the button status
+        let new_value = self.get_digital(button);
+
+        // If the values are different and the new value is false, the button has been newly released
+        if (btn_status != new_value) && !new_value {
+            // Set it in the cache
+            self.button_status.acquire()[button as usize-6] = new_value;
+            true
+        } else {
+            false
+        }
     }
 
     /// Gets the analog value of a button on the controller
