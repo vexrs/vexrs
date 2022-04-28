@@ -34,7 +34,7 @@ impl<T> Mutex<T> {
 
     /// Acquires the lock on the mutex
     #[allow(clippy::while_immutable_condition)]
-    pub fn acquire(&self) {
+    pub fn acquire(&self) -> MutexGuard<'_, T>{
         // If the lock is not acquired and no-one is waiting on the queue, then take the lock
         if !*self.lock.borrow() && self.queue.borrow().is_empty() {
             *self.lock.borrow_mut() = true;
@@ -42,7 +42,7 @@ impl<T> Mutex<T> {
             // Before returning, yield to the next task
             get_runtime().yield_t(); // YIELD POINT
 
-            return;
+            return MutexGuard { mutex: &self };
         }
 
         // Add ourselves to the queue
@@ -54,8 +54,11 @@ impl<T> Mutex<T> {
             get_runtime().await_wake(WakeSignal::MutexRelease);
         }
 
-        // Once we are woken and the lock is not taken, set the lock and return
+        // Once we are woken and the lock is not taken, set the lock
         *self.lock.borrow_mut() = true;
+
+        // Return the mutex guard
+        MutexGuard { mutex: &self }
     }
 
     /// Releases the lock on the mutex
@@ -86,7 +89,7 @@ impl<T> Mutex<T> {
 
 /// A guard smart pointer for the mutex
 pub struct MutexGuard<'a, T> {
-    mutex: &'a mut Mutex<T>
+    mutex: &'a Mutex<T>
 }
 
 impl<T> Deref for MutexGuard<'_, T> {
