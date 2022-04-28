@@ -88,17 +88,25 @@ impl Runtime {
             if pos >= self.tasks.len() {
                 pos = 0;
             }
+
+            if pos == self.current && !has_waiting_task {
+                return false;
+            }
             
             
             if self.task_waiting(self.tasks[pos].id) {
                 has_waiting_task = true;
             }
+            
             if self.task_ready(self.tasks[pos].id) {
                 break;
             }
-            if pos == self.current && !has_waiting_task {
-                return false;
-            }
+            
+        }
+
+        // If we just end up yielding to the current task again, just return
+        if pos == self.current {
+            return false;
         }
 
         // Save the old index
@@ -130,7 +138,8 @@ impl Runtime {
                 "push {{r12, r11, r10, r9, r8, r7, r6, r5, r4, r3, r2, r1, r0}}",
                 "str sp, [{2}]",
                 "mov sp, {3}",
-                "pop {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr, pc}}",
+                "pop {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}",
+                "pop {{pc}}",
                 "2:",
                 in(reg) guard as usize,
                 out(reg) _, // We just want to reserve a register to use

@@ -1,6 +1,7 @@
 // The core CEROS runtime support library.
 
-use crate::{println, eprintln};
+
+use crate::{println, eprintln, runtime::util::get_runtime};
 
 
 // A basic task structure implementation
@@ -44,12 +45,11 @@ pub fn main(user_entry: fn()) {
     println!("ok");
 
     loop {
-        println!("Hello from os task!");
-        println!("{}", crate::util::get_stack_pointer());
+        // Tick the OS here.
+        println!("OS Ping");
 
-        crate::util::block(20);
-        crate::util::get_runtime().yield_for(5000);
-        
+        // All loops need to yield
+        get_runtime().yield_t();
     }
 }
 

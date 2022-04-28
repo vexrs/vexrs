@@ -2,7 +2,7 @@
 // This article was used as reference:
 // https://mnwa.medium.com/building-a-stupid-mutex-in-the-rust-d55886538889
 
-use core::{cell::UnsafeCell, ops::{Deref, DerefMut}};
+use core::{cell::{UnsafeCell, RefCell}, ops::{Deref, DerefMut}};
 use alloc::collections::VecDeque;
 use super::{util::get_runtime, task::WakeSignal};
 
@@ -10,9 +10,9 @@ use super::{util::get_runtime, task::WakeSignal};
 /// A basic mutex implementation
 pub struct Mutex<T> {
     /// A boolean that determines if the lock is currently taken
-    lock: bool,
+    lock: RefCell<bool>,
     /// A queue of tasks waiting on the lock
-    queue: VecDeque<usize>,
+    queue: RefCell<VecDeque<usize>>,
     /// The data the mutex is storing
     data: UnsafeCell<T>
 }
@@ -21,52 +21,64 @@ impl<T> Mutex<T> {
     /// Creates a new mutex
     pub fn new(data: T) -> Mutex<T> {
         Mutex {
-            lock: false,
-            queue: VecDeque::new(),
+            lock: RefCell::new(false),
+            queue: RefCell::new(VecDeque::new()),
             data: UnsafeCell::new(data),
         }
     }
 
     /// Returns true if the lock is taken
     pub fn is_taken(&self) -> bool {
-        self.lock
+        *self.lock.borrow()
     }
 
     /// Acquires the lock on the mutex
     #[allow(clippy::while_immutable_condition)]
-    pub fn acquire(&mut self) {
+    pub fn acquire(&self) {
         // If the lock is not acquired and no-one is waiting on the queue, then take the lock
-        if !self.lock && self.queue.is_empty() {
-            self.lock = true;
+        if !*self.lock.borrow() && self.queue.borrow().is_empty() {
+            *self.lock.borrow_mut() = true;
+
+            // Before returning, yield to the next task
+            get_runtime().yield_t(); // YIELD POINT
+
             return;
         }
 
         // Add ourselves to the queue
-        self.queue.push_front(get_runtime().current_task());
+        self.queue.borrow_mut().push_front(get_runtime().current_task());
 
         // And go to sleep until we recieve the mutex unlocked signal, repeating for 
         // as long as the lock is taken
-        while self.lock {
+        while *self.lock.borrow() {
             get_runtime().await_wake(WakeSignal::MutexRelease);
         }
 
         // Once we are woken and the lock is not taken, set the lock and return
-        self.lock = true;
+        *self.lock.borrow_mut() = true;
     }
 
     /// Releases the lock on the mutex
-    pub fn release(&mut self) {
+    pub fn release(&self) {
         // Release the lock
-        self.lock = false;
+        *self.lock.borrow_mut() = false;
 
         // If the queue is empty, just return
-        if self.queue.is_empty() {
+        if self.queue.borrow().is_empty() {
             return;
         }
 
         // If not, get the next id and wake it
-        let next = self.queue.pop_back().unwrap_or_else(|| get_runtime().current_task());
-        get_runtime().wake(next, WakeSignal::MutexRelease);
+        let next = self.queue.borrow_mut().pop_back();
+
+        // If there is another task then wake it
+        if let Some(next) = next {
+            get_runtime().wake(next, WakeSignal::MutexRelease);
+        } else {
+            // If not, yield
+            get_runtime().yield_t(); // YIELD POINT
+        }
+
     }
 
 }
