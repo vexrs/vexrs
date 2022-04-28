@@ -6,7 +6,12 @@ use super::DEFAULT_STACK_SIZE;
 use super::guard;
 
 
-
+/// Signals that can get called to wake a task
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum WakeSignal {
+    /// Called when a mutex is released
+    MutexRelease,
+}
 
 
 /// The state of a task determines when it should be entered again
@@ -21,6 +26,8 @@ pub enum TaskState {
     Available,
     /// A task that is waiting until a specific time
     WaitUntil(Timer),
+    /// Waits for a specific wake signal to be recieved
+    AwaitWake(WakeSignal),
 }
 
 /// The context of a task contains all registers that need to be restored

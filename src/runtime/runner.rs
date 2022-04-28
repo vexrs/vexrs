@@ -4,7 +4,7 @@ use core::arch::asm;
 use alloc::vec::Vec;
 
 use crate::{println, hardware::timer::Timer};
-use super::{task::{Task, TaskState, TaskContext}, MAX_TASKS, DEFAULT_STACK_SIZE, guard};
+use super::{task::{Task, TaskState, TaskContext, WakeSignal}, MAX_TASKS, DEFAULT_STACK_SIZE, guard};
 
 
 
@@ -66,6 +66,11 @@ impl Runtime {
     /// Yields the current task, and will not resume until the specified delay has elapsed.
     pub fn yield_for(&mut self, t: u32) {
         self.yield_as(TaskState::WaitUntil(Timer::new(t)));
+    }
+    
+    /// Puts the task to sleep until a specific wake code is recieved
+    pub fn await_wake(&mut self, signal: WakeSignal) {
+        self.yield_as(TaskState::AwaitWake(signal));
     }
 
     /// Switches to the next context, saving this task's state specialy.
@@ -151,6 +156,7 @@ impl Runtime {
         match self.tasks[pos].state {
             TaskState::Ready => true,
             TaskState::WaitUntil(t) => t.is_elapsed(),
+            TaskState::AwaitWake(_) => false,
             TaskState::Running => false,
             TaskState::Available => false,
         }
@@ -173,13 +179,14 @@ impl Runtime {
         match self.tasks[pos].state {
             TaskState::Ready => false,
             TaskState::WaitUntil(t) => !t.is_elapsed(),
+            TaskState::AwaitWake(_) => true,
             TaskState::Running => false,
             TaskState::Available => false,
         }
     }
 
     /// Yields to a specific task. Returns true if successful.
-    pub fn wake(&mut self, id: usize) -> bool {
+    pub fn wake(&mut self, id: usize, signal: WakeSignal) -> bool {
         // Find the task's index by it's id
         let pos = self.tasks.iter().position(|t| t.id == id);
 
@@ -191,10 +198,15 @@ impl Runtime {
             }
         };
 
-        // If the new task is ready, then context switch
-        if !self.task_ready(id) {
+        // If our wake signal is not correct, then do not switch
+        if let TaskState::AwaitWake(s) = self.tasks[pos].state {
+            if s != signal {
+                return false;
+            }
+        } else if !self.task_ready(id) {
             return false;
         }
+        
 
         // Save the current task
         let old = self.current;
@@ -212,6 +224,11 @@ impl Runtime {
         self.context_switch(self.current, old);
 
         true
+    }
+
+    /// Returns the current task's id
+    pub fn current_task(&self) -> usize {
+        self.tasks[self.current].id
     }
     
     /// Kills the current task

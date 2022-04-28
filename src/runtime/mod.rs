@@ -9,8 +9,12 @@ pub mod task;
 // The actual runtime, including a simple round-robin scheduler.
 pub mod runner;
 
+// A basic mutex implementation
+pub mod mutex;
+
 // Utility files for interacting with the runtime
 pub mod util;
+
 
 use alloc::boxed::Box;
 use runner::Runtime;
@@ -42,7 +46,7 @@ pub fn main(user_entry: fn()) {
     loop {
         println!("Hello from os task!");
         println!("{}", crate::util::get_stack_pointer());
-        
+
         crate::util::block(20);
         crate::util::get_runtime().yield_for(5000);
         
