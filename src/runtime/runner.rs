@@ -1,4 +1,4 @@
-use core::{arch::asm, ffi::c_void};
+use core::arch::asm;
 
 use alloc::vec::Vec;
 
@@ -48,9 +48,6 @@ impl Runtime {
         unsafe {
             // Set the global runtime
             super::RUNTIME = self as *const Runtime;
-            
-            // Register the timer interrupt
-            //vexv5rt::vexSystemTimerReinitForRtos(1, Some(tick));
             
         }
     }
@@ -271,11 +268,3 @@ impl Runtime {
 
 
 
-/// This is the main tick function, called on every timer tick
-#[no_mangle]
-unsafe extern "C" fn tick(_data: *mut c_void) {
-    
-    // Clear the timer interrupt
-    vexv5rt::vexSystemTimerClearInterrupt();
-    
-}

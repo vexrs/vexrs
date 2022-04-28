@@ -42,7 +42,7 @@ pub fn main(user_entry: fn()) {
     loop {
         println!("Hello from os task!");
         println!("{}", crate::util::get_stack_pointer());
-        unsafe {vexv5rt::vexDisplayCenteredString(1, "Hello from os task!!!\0".as_ptr());}
+        
         crate::util::block(20);
         crate::util::get_runtime().yield_for(5000);
         
