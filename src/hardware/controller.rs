@@ -45,6 +45,13 @@ pub enum ControllerAxis {
     RightY,
 }
 
+/// Controller Status Register indexes
+#[repr(u8)]
+#[derive(Debug, Copy, Clone)]
+enum ControllerRegister {
+    BatteryLevel = 19,
+    BatteryCapacity = 22,
+}
 
 
 /// Struct that allows user programs to interact with the vex v5 controller
@@ -187,5 +194,25 @@ impl Controller {
         // According to PROS, if you set line # 3 to the 
         // rumble pattern, the controller will rumble
         self.set_text(0, 3, pattern);
+    }
+
+    /// Gets the controller's battery capacity
+    pub fn battery_capacity(&self) -> i32 {
+        // Lock the controller's id
+        let id = self.id.acquire();
+
+        unsafe {
+            vexv5rt::vexControllerGet(*id as u32, ControllerRegister::BatteryCapacity as u32)
+        }
+    }
+
+    /// Gets the controller's battery level
+    pub fn battery_level(&self) -> i32 {
+        // Lock the controller's id
+        let id = self.id.acquire();
+
+        unsafe {
+            vexv5rt::vexControllerGet(*id as u32, ControllerRegister::BatteryLevel as u32)
+        }
     }
 }
