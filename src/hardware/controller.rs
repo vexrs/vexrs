@@ -1,6 +1,8 @@
 // Interfaces for the vex v5 controller
 
 
+use alloc::string::{String, ToString};
+
 use crate::runtime::mutex::Mutex;
 
 /// The ID of a controller
@@ -150,5 +152,31 @@ impl Controller {
         unsafe {
             vexv5rt::vexControllerGet(*id as u32, index)
         }
+    }
+
+    /// Set text on the controller screen
+    pub fn set_text(&self, x: u32, y: u32, text: String) {
+
+        // Lock the controller ID
+        let id = self.id.acquire();
+
+        // Redefine text as mutable
+        let mut text = text;
+
+        // Add a \0 to the text
+        text.push('\0');
+
+        // Set the text
+        unsafe {
+            vexv5rt::vexControllerTextSet(*id as u32, y+1, x, text.as_ptr());
+        }
+    }
+
+    /// Clear the controller's screen
+    pub fn clear_screen(&self) {
+
+        // Just set the text at 255, which should work in the latest VexOS
+        // version according to the PROS source code
+        self.set_text(0, 255, "".to_string())
     }
 }
