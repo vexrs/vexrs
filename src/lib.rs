@@ -27,6 +27,10 @@ pub mod runtime;
 // Make the main function from the runtime public
 pub use runtime::main;
 
+// Abstractions over libv5rt
+pub mod hardware;
+
+
 // This module contains a utility handler for printing to the serial port
 // using standard rust macros.
 pub mod print;

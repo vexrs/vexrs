@@ -2,7 +2,7 @@ use core::{arch::asm, ffi::c_void};
 
 use alloc::vec::Vec;
 
-use crate::println;
+use crate::{println, hardware::timer::Timer};
 
 use super::{task::{Task, TaskState, TaskContext}, MAX_TASKS, DEFAULT_STACK_SIZE, guard};
 
@@ -63,14 +63,12 @@ impl Runtime {
 
     /// Yields the current task, and will not resume it until a time has been reached
     pub fn yield_until(&mut self, t: u32) {
-        self.yield_as(TaskState::WaitUntil(t));
+        self.yield_as(TaskState::WaitUntil(Timer::new_until(t)));
     }
 
     /// Yields the current task, and will not resume until the specified delay has elapsed.
     pub fn yield_for(&mut self, t: u32) {
-        self.yield_until(unsafe {
-            vexv5rt::vexSystemTimeGet() + t
-        });
+        self.yield_as(TaskState::WaitUntil(Timer::new(t)));
     }
 
     /// Switches to the next context, saving this task's state specialy.
@@ -89,12 +87,9 @@ impl Runtime {
                 pos = 0;
             }
             
-            if let TaskState::WaitUntil(t) = self.tasks[pos].state {
-                if unsafe { vexv5rt::vexSystemTimeGet() } >= t {
-                    break;
-                } else {
-                    has_waiting_task = true;
-                }
+            
+            if self.task_waiting(self.tasks[pos].id) {
+                has_waiting_task = true;
             }
             if self.task_ready(self.tasks[pos].id) {
                 break;
@@ -158,7 +153,29 @@ impl Runtime {
 
         match self.tasks[pos].state {
             TaskState::Ready => true,
-            TaskState::WaitUntil(t) => (unsafe { vexv5rt::vexSystemTimeGet() } >= t),
+            TaskState::WaitUntil(t) => t.is_elapsed(),
+            TaskState::Running => false,
+            TaskState::Available => false,
+        }
+    }
+
+
+    /// Returns true if a task is waiting to be executed
+    pub fn task_waiting(&mut self, id: usize) -> bool {
+        // Find the task's index by it's id
+        let pos = self.tasks.iter().position(|t| t.id == id);
+
+        // If it was not found, return false
+        let pos = match pos {
+            Some(p) => p,
+            _ => {
+                return false;
+            }
+        };
+
+        match self.tasks[pos].state {
+            TaskState::Ready => false,
+            TaskState::WaitUntil(t) => !t.is_elapsed(),
             TaskState::Running => false,
             TaskState::Available => false,
         }

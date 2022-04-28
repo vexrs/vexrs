@@ -1,5 +1,7 @@
 use alloc::vec::Vec;
 
+use crate::hardware::timer::Timer;
+
 use super::DEFAULT_STACK_SIZE;
 use super::guard;
 
@@ -18,7 +20,7 @@ pub enum TaskState {
     /// An available task has nothing assigned to it.
     Available,
     /// A task that is waiting until a specific time
-    WaitUntil(u32),
+    WaitUntil(Timer),
 }
 
 /// The context of a task contains all registers that need to be restored

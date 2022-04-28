@@ -14,7 +14,7 @@ ceros-serial = { git = "ssh://git@github.com/Culpeper-Robotics/ceros-serial", fe
 
 
 [features]
-default = ["alloc", "panic", "green_threads", "sync"]
+default = ["alloc", "panic", "green_threads"]
 alloc = ["dep:newlib-alloc"]
 panic = ["dep:ceros-serial"]
 green_threads = []
