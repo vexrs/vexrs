@@ -179,4 +179,13 @@ impl Controller {
         // version according to the PROS source code
         self.set_text(0, 255, "".to_string())
     }
+
+    /// Rumbles the controller using a passed pattern
+    /// Dots (.) are short rumbles, dashes (-) are long rumbles
+    /// and spaces ( ) are, well, spaces.
+    pub fn rumble(&self, pattern: String) {
+        // According to PROS, if you set line # 3 to the 
+        // rumble pattern, the controller will rumble
+        self.set_text(0, 3, pattern);
+    }
 }
