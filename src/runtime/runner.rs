@@ -96,7 +96,7 @@ impl Runtime {
                     has_waiting_task = true;
                 }
             }
-            if self.tasks[pos].state == TaskState::Ready {
+            if self.task_ready(self.tasks[pos].id) {
                 break;
             }
             if pos == self.current && !has_waiting_task {
@@ -118,6 +118,13 @@ impl Runtime {
 
 
         // Run the actual context switch
+        self.context_switch(self.current, old);
+
+        true
+    }
+
+    /// Context switches to a new task
+    fn context_switch(&mut self, new: usize, old: usize) {
         unsafe {
             asm!("/* {0} */",
                 "ldr {1}, =2f",
@@ -131,18 +138,76 @@ impl Runtime {
                 in(reg) guard as usize,
                 out(reg) _, // We just want to reserve a register to use
                 in(reg) core::ptr::addr_of!(self.tasks[old].context.sp),
-                in(reg) self.tasks[self.current].context.sp,
+                in(reg) self.tasks[new].context.sp,
             );
         }
+    }
+
+    /// Returns if a task is ready to be executed
+    pub fn task_ready(&mut self, id: usize) -> bool {
+        // Find the task's index by it's id
+        let pos = self.tasks.iter().position(|t| t.id == id);
+
+        // If it was not found, return false
+        let pos = match pos {
+            Some(p) => p,
+            _ => {
+                return false;
+            }
+        };
+
+        match self.tasks[pos].state {
+            TaskState::Ready => true,
+            TaskState::WaitUntil(t) => (unsafe { vexv5rt::vexSystemTimeGet() } >= t),
+            TaskState::Running => false,
+            TaskState::Available => false,
+        }
+    }
+
+    /// Yields to a specific task. Returns true if successful.
+    pub fn wake(&mut self, id: usize) -> bool {
+        // Find the task's index by it's id
+        let pos = self.tasks.iter().position(|t| t.id == id);
+
+        // If it was not found, return false
+        let pos = match pos {
+            Some(p) => p,
+            _ => {
+                return false;
+            }
+        };
+
+        // If the new task is ready, then context switch
+        if !self.task_ready(id) {
+            return false;
+        }
+
+        // Save the current task
+        let old = self.current;
+
+        // And update the current task
+        self.current = pos;
+
+        // Update the old task's state to ready
+        self.tasks[old].state = TaskState::Ready;
+
+        // And the new one to running
+        self.tasks[self.current].state = TaskState::Running;
+
+        // Now context switch
+        self.context_switch(self.current, old);
 
         true
     }
-
-
     
     /// Kills the current task
     pub fn kill_current(&mut self) {
         self.tasks[self.current].state = TaskState::Available;
+    }
+
+    /// Kills a task with the specified ID
+    pub fn kill_task(&mut self, id: usize) {
+        self.tasks[id].state = TaskState::Available;
     }
 
     /// Spawns a new task
