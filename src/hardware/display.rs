@@ -33,7 +33,7 @@ pub trait DisplayElement {
     fn intersects(&self, x: i32, y: i32) -> bool;
 
     /// Runs when a touch event happens over this element
-    fn on_touch(&mut self, event: TouchEvent, x: i32, y: i32);
+    fn on_touch_recieved(&mut self, event: TouchEvent, x: i32, y: i32);
 }
 
 /// A shape that can be drawn
@@ -90,9 +90,65 @@ pub struct Element {
     pub shapes: Vec<Shape>,
     pub x: i32,
     pub y: i32,
-    pub touch: fn(&mut Element, event: TouchEvent, x: i32, y: i32),
+    pub touch: Option<fn(&mut Element, event: TouchEvent, x: i32, y: i32)>,
 }
 
+impl Element {
+    /// Creates a new element
+    pub fn new(x: i32, y: i32) -> Element {
+        Element {
+            shapes: vec![],
+            x, y,
+            touch: None,
+        }
+    }
+
+    /// Sets the on_touch callback
+    pub fn on_touch(&mut self, touch: fn(&mut Element, event: TouchEvent, x: i32, y: i32)) -> &mut Element {
+        self.touch = Some(touch);
+        self
+    }
+
+    /// Adds a rectangle
+    pub fn rectangle(&mut self, x: i32, y: i32, w: i32, h: i32, color: u32, fill: bool) -> &mut Element {
+        self.shapes.push(
+            Shape::Rectangle { x1: x, y1: y, x2: x+w, y2: y+h, color, fill }
+        );
+        self
+    }
+
+    /// Adds a circle
+    pub fn circle(&mut self, x: i32, y: i32, r: i32, color: u32, fill: bool) -> &mut Element {
+        self.shapes.push(
+            Shape::Circle {cx: x, cy: y, r, color, fill}
+        );
+        self
+    }
+    
+    /// Adds Regular text
+    pub fn text(&mut self, x: i32, y: i32, color: u32, text: String) -> &mut Element {
+        self.shapes.push(
+            Shape::Text { tx: x, ty: y, color, text }
+        );
+        self
+    }
+
+    /// Adds small text
+    pub fn small_text(&mut self, x: i32, y: i32, color: u32, text: String) -> &mut Element {
+        self.shapes.push(
+            Shape::SmallText { tx: x, ty: y, color, text }
+        );
+        self
+    }
+
+    /// Adds big text
+    pub fn big_text(&mut self, x: i32, y: i32, color: u32, text: String) -> &mut Element {
+        self.shapes.push(
+            Shape::BigText { tx: x, ty: y, color, text }
+        );
+        self
+    }
+}
 
 impl DisplayElement for Element {
 
@@ -226,8 +282,10 @@ impl DisplayElement for Element {
         false
     }
 
-    fn on_touch(&mut self, event: TouchEvent, x: i32, y: i32) {
-        (self.touch)(self, event, x, y);
+    fn on_touch_recieved(&mut self, event: TouchEvent, x: i32, y: i32) {
+        if let Some(touch) = self.touch {
+            (touch)(self, event, x, y);
+        }
     }
 }
 
@@ -327,7 +385,7 @@ impl Display {
         for element in elements.iter_mut() {
             // If the element intersects, call it's touch function and then break
             if element.intersects(x, y) {
-                element.on_touch(event, x, y);
+                element.on_touch_recieved(event, x, y);
                 break;
             } 
         }
