@@ -1,7 +1,7 @@
 // Basic library for interacting with the vex v5 display.
 
 
-use alloc::{vec::Vec, boxed::Box};
+use alloc::{vec::Vec, boxed::Box, string::String};
 
 use crate::runtime::mutex::Mutex;
 
@@ -39,7 +39,9 @@ pub trait DisplayElement {
 /// A shape that can be drawn
 pub enum Shape {
     Rectangle {x1: i32, y1: i32, x2: i32, y2: i32, color: u32, fill: bool},
-    Circle {cx: i32, cy: i32, r: i32, color: u32, fill: bool}
+    Circle {cx: i32, cy: i32, r: i32, color: u32, fill: bool},
+    Text {tx: i32, ty: i32, color: u32, text: String, big: bool},
+    LineText {line: i32, color: u32, text: String, centered: bool, big: bool},
 }
 
 
@@ -53,6 +55,12 @@ impl Shape {
             },
             Shape::Circle {cx: _, cy:_, r:_, color, fill:_} => {
                 *color = new_color;
+            },
+            Shape::Text {tx: _, ty: _, color, text: _, big: _} => {
+                *color = new_color;
+            },
+            Shape::LineText { line: _, text: _, centered: _, big: _, color } => {
+                *color = new_color;
             }
         }
     }
@@ -65,7 +73,8 @@ impl Shape {
             },
             Shape::Circle {cx: _, cy: _, r:_, color: _, fill} => {
                 *fill = new_fill;
-            }
+            },
+            _ => {}
         }
     }
 }
@@ -84,7 +93,7 @@ impl DisplayElement for Element {
     /// Draws the shape
     fn draw(&self) {
         for shape in &self.shapes {
-            match *shape {
+            match shape {
                 Shape::Rectangle { x1, y1, x2, y2, color, fill} => {
                     // Add the element's offsets
                     let x1 = x1 + self.x;
@@ -93,14 +102,14 @@ impl DisplayElement for Element {
                     let y2 = y2 + self.y;
 
                     // Draw it using the v5 api
-                    if fill {
+                    if *fill {
                         unsafe {
-                            vexv5rt::vexDisplayForegroundColor(color);
+                            vexv5rt::vexDisplayForegroundColor(*color);
                             vexv5rt::vexDisplayRectFill(x1, y1, x2, y2);
                         }
                     } else {
                         unsafe {
-                            vexv5rt::vexDisplayForegroundColor(color);
+                            vexv5rt::vexDisplayForegroundColor(*color);
                             vexv5rt::vexDisplayRectDraw(x1, y1, x2, y2 );
                         }
                     }
@@ -111,16 +120,68 @@ impl DisplayElement for Element {
                     let cy = cy + self.y;
 
                     // Draw it using the v5 api
-                    if fill {
+                    if *fill {
                         unsafe {
-                            vexv5rt::vexDisplayForegroundColor(color);
-                            vexv5rt::vexDisplayCircleFill(cx, cy, r);
+                            vexv5rt::vexDisplayForegroundColor(*color);
+                            vexv5rt::vexDisplayCircleFill(cx, cy, *r);
                         }
                     } else {
                         unsafe {
-                            vexv5rt::vexDisplayForegroundColor(color);
-                            vexv5rt::vexDisplayCircleDraw(cx, cy, r);
+                            vexv5rt::vexDisplayForegroundColor(*color);
+                            vexv5rt::vexDisplayCircleDraw(cx, cy, *r);
                         }
+                    }
+                },
+                Shape::Text {tx, ty, color, text, big} => {
+                    // Add the element's offsets
+                    let tx = tx + self.x;
+                    let ty = ty + self.y;
+
+                    // Add a \0 to the text
+                    let mut text = text.clone();
+                    text.push('\0');
+
+                    // Set the foreground color
+                    unsafe {
+                        vexv5rt::vexDisplayForegroundColor(*color);
+                    }
+
+                    // Draw the text
+                    if *big {
+                        unsafe {
+                            vexv5rt::vexDisplayBigStringAt(tx, ty, text.as_ptr());
+                        }
+                    } else {
+                        unsafe {
+                            vexv5rt::vexDisplayStringAt(tx, ty, text.as_ptr());
+                        }
+                    }
+                },
+                Shape::LineText { line, color, text, centered, big } => {
+
+                    // Add a \0 to the text
+                    let mut text = text.clone();
+                    text.push('\0');
+
+                    // Set the foreground color
+                    unsafe {
+                        vexv5rt::vexDisplayForegroundColor(*color);
+                    }
+
+                    // Draw the text
+                    unsafe {
+                        if *big {
+                            if *centered {
+                                vexv5rt::vexDisplayBigCenteredString(*line, text.as_ptr());
+                            } else {
+                                vexv5rt::vexDisplayBigString(*line, text.as_ptr());
+                            }
+                        } else if *centered {
+                            vexv5rt::vexDisplayCenteredString(*line, text.as_ptr());
+                        } else {
+                            vexv5rt::vexDisplayString(*line, text.as_ptr());
+                        }
+                    
                     }
                 }
             };
@@ -145,7 +206,8 @@ impl DisplayElement for Element {
                     let cy = cy + self.y;
                     
                     ((cx-x)*(cx-x) + (cy-y)*(cy-y)) <= r*r
-                }
+                },
+                _ => false,
             } {
                 return true;
             }
@@ -159,6 +221,7 @@ impl DisplayElement for Element {
 }
 
 /// A Structure for interacting with the v5 brain display
+
 pub struct Display {
     elements: Mutex<Vec<Box<dyn DisplayElement>>>,
     draw_lock: Mutex<()>
@@ -182,6 +245,8 @@ impl Display {
             draw_lock: Mutex::new(())
         }
     }
+
+    
 
     /// Initializes the display, adding it to the global singleton
     pub fn init(&self) {
@@ -259,7 +324,12 @@ impl Display {
     
 }
 
-
+impl Default for Display {
+    /// Creates a default display object
+    fn default() -> Display {
+        Self::new()
+    }
+}
 
 /// The global touch callback. This will call the on_touch event on display.
 unsafe extern "C" fn touch_callback(event: u32, x: i32, y: i32) {

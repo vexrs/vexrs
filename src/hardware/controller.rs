@@ -95,7 +95,7 @@ impl Controller {
         let id = self.id.acquire();
 
         // Lock the button status
-        let mut button_status = self.button_status.acquire();
+        let _button_status = self.button_status.acquire();
 
         // Get the index of the button
         let index = button as u32;

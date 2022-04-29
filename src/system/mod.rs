@@ -24,7 +24,7 @@ pub fn os_init(user_entry: fn()) -> ! {
     runtime.init();
 
     // Create the global display
-    let mut display =  Box::new(Display::new());
+    let display =  Box::new(Display::new());
 
     // Initialize it
     display.init();
