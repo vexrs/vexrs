@@ -5,8 +5,8 @@ use alloc::{vec::Vec, boxed::Box};
 
 use crate::{runtime::mutex::Mutex, println};
 
-const BRAIN_SCREEN_WIDTH: u32 = 480;
-const BRAIN_SCREEN_HEIGHT: u32 = 240;
+const BRAIN_SCREEN_WIDTH: i32 = 480;
+const BRAIN_SCREEN_HEIGHT: i32 = 240;
 
 
 /// Trait that defines objects that can be displayed
@@ -38,7 +38,7 @@ impl DisplayElement for Shape {
             Shape::Rectangle { x1, y1, x2, y2, color, fill } => {
                 // Draw it using the v5 api
                 if fill {
-                    println!("{}", x1);
+
                     unsafe {
                         vexv5rt::vexDisplayForegroundColor(color);
                         vexv5rt::vexDisplayRectFill(x1, y1, x2, y2);
@@ -106,22 +106,31 @@ impl Display {
     }
 
     /// Clears the screen
-    pub fn clear(&self) {
+    pub fn clear_screen(&self) {
         
-        // Lock the draw lock
-        let mtx = self.draw_lock.acquire();
-
-        // Lock the elements
-        let mut elements = self.elements.acquire();
-
-        // Clear the elements
-        elements.clear();
         // Clear the screen
         unsafe {
             vexv5rt::vexDisplayErase();
         }
         
     }
+
+    /// Clears all elements
+    pub fn clear_elements(&self) {
+        // Lock the elements
+        let mut elements = self.elements.acquire();
+
+        // Clear the elements
+        elements.clear();
+    }
+
+    /// Clears the screen and all elements
+    pub fn clear(&self) {
+        self.clear_elements();
+        self.clear_screen();
+    }
+
+    
 
     /// Draws a frame of the display
     pub fn draw(&self) {
@@ -130,12 +139,16 @@ impl Display {
         let elements = self.elements.acquire();
 
         // Acquire a lock on drawing
-        let mtx = self.draw_lock.acquire();
+        let _mtx = self.draw_lock.acquire();
 
         // Iterate over elements, drawing each
         for element in elements.iter() {
             // Draw the element
             element.draw();
+        }
+
+        unsafe {
+            vexv5rt::vexDisplayRender(true, false);
         }
     }
     

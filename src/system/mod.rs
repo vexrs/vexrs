@@ -70,10 +70,15 @@ pub fn os_init(user_entry: fn()) -> ! {
 
         //------------------------------//
         //          Draw Tick           //
-        //------------------------------//
+        //------------------------------//        
+
+        // Clear the screen
+        display.clear_screen();
 
         // Draw to the display
         display.draw();
+
+        
 
         // All loops need to yield
         get_runtime().yield_t();
