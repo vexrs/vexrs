@@ -1,7 +1,7 @@
 // Basic library for interacting with the vex v5 display.
 
 
-use alloc::{vec::Vec, boxed::Box, string::String};
+use alloc::{vec::Vec, string::String};
 
 use crate::runtime::mutex::Mutex;
 
@@ -24,21 +24,10 @@ pub enum TouchEvent {
 }
 
 
-/// Trait that defines objects that can be displayed
-pub trait DisplayElement {
-    /// Draws the shape, assuming the display is already locked
-    fn draw(&self);
-
-    /// Returns true if the given point intersects the shape
-    fn intersects(&self, x: i32, y: i32) -> bool;
-
-    /// Runs when a touch event happens over this element
-    fn on_touch_recieved(&mut self, event: TouchEvent, x: i32, y: i32);
-}
-
 /// A shape that can be drawn
 /// Please note that text can not be detected as pressed, so a rectangle
 /// or circle will need to be used to make buttons.
+#[derive(Clone)]
 pub enum Shape {
     Rectangle {x1: i32, y1: i32, x2: i32, y2: i32, color: u32, fill: bool},
     Circle {cx: i32, cy: i32, r: i32, color: u32, fill: bool},
@@ -86,6 +75,7 @@ impl Shape {
 }
 
 /// A drawable element
+#[derive(Clone)]
 pub struct Element {
     pub shapes: Vec<Shape>,
     pub x: i32,
@@ -148,9 +138,6 @@ impl Element {
         );
         self
     }
-}
-
-impl DisplayElement for Element {
 
     /// Draws the shape
     fn draw(&self) {
@@ -288,23 +275,22 @@ impl DisplayElement for Element {
         }
     }
 }
-
 /// A Structure for interacting with the v5 brain display
 
 pub struct Display {
-    elements: Mutex<Vec<Box<dyn DisplayElement>>>,
+    elements: Mutex<Vec<Element>>,
     draw_lock: Mutex<()>
 }
 
 impl Display {
 
     /// Add a component to the display
-    pub fn add(&mut self, element: Box<dyn DisplayElement>) {
+    pub fn add(&mut self, element: &Element) {
         // Lock the mutex
         let mut list = self.elements.acquire();
 
         // Add the elements
-        list.push(element);
+        list.push(element.clone());
     }
 
     /// Creates a new display object
