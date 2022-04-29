@@ -40,8 +40,9 @@ pub trait DisplayElement {
 pub enum Shape {
     Rectangle {x1: i32, y1: i32, x2: i32, y2: i32, color: u32, fill: bool},
     Circle {cx: i32, cy: i32, r: i32, color: u32, fill: bool},
-    Text {tx: i32, ty: i32, color: u32, text: String, big: bool},
-    LineText {line: i32, color: u32, text: String, centered: bool, big: bool},
+    Text {tx: i32, ty: i32, color: u32, text: String},
+    BigText {tx: i32, ty: i32, color: u32, text: String},
+    SmallText {tx: i32, ty: i32, color: u32, text: String},
 }
 
 
@@ -56,12 +57,15 @@ impl Shape {
             Shape::Circle {cx: _, cy:_, r:_, color, fill:_} => {
                 *color = new_color;
             },
-            Shape::Text {tx: _, ty: _, color, text: _, big: _} => {
+            Shape::Text {tx: _, ty: _, color, text: _,} => {
                 *color = new_color;
             },
-            Shape::LineText { line: _, text: _, centered: _, big: _, color } => {
+            Shape::BigText {tx: _, ty: _, color, text: _,} => {
                 *color = new_color;
-            }
+            },
+            Shape::SmallText {tx: _, ty: _, color, text: _,} => {
+                *color = new_color;
+            },
         }
     }
 
@@ -132,7 +136,7 @@ impl DisplayElement for Element {
                         }
                     }
                 },
-                Shape::Text {tx, ty, color, text, big} => {
+                Shape::Text {tx, ty, color, text} => {
                     // Add the element's offsets
                     let tx = tx + self.x;
                     let ty = ty + self.y;
@@ -147,17 +151,14 @@ impl DisplayElement for Element {
                     }
 
                     // Draw the text
-                    if *big {
-                        unsafe {
-                            vexv5rt::vexDisplayBigStringAt(tx, ty, text.as_ptr());
-                        }
-                    } else {
-                        unsafe {
-                            vexv5rt::vexDisplayStringAt(tx, ty, text.as_ptr());
-                        }
+                    unsafe {
+                        vexv5rt::vexDisplayStringAt(tx, ty, text.as_ptr());
                     }
                 },
-                Shape::LineText { line, color, text, centered, big } => {
+                Shape::BigText {tx, ty, color, text} => {
+                    // Add the element's offsets
+                    let tx = tx + self.x;
+                    let ty = ty + self.y;
 
                     // Add a \0 to the text
                     let mut text = text.clone();
@@ -170,20 +171,28 @@ impl DisplayElement for Element {
 
                     // Draw the text
                     unsafe {
-                        if *big {
-                            if *centered {
-                                vexv5rt::vexDisplayBigCenteredString(*line, text.as_ptr());
-                            } else {
-                                vexv5rt::vexDisplayBigString(*line, text.as_ptr());
-                            }
-                        } else if *centered {
-                            vexv5rt::vexDisplayCenteredString(*line, text.as_ptr());
-                        } else {
-                            vexv5rt::vexDisplayString(*line, text.as_ptr());
-                        }
-                    
+                        vexv5rt::vexDisplayBigStringAt(tx, ty, text.as_ptr());
                     }
-                }
+                },
+                Shape::SmallText {tx, ty, color, text} => {
+                    // Add the element's offsets
+                    let tx = tx + self.x;
+                    let ty = ty + self.y;
+
+                    // Add a \0 to the text
+                    let mut text = text.clone();
+                    text.push('\0');
+
+                    // Set the foreground color
+                    unsafe {
+                        vexv5rt::vexDisplayForegroundColor(*color);
+                    }
+
+                    // Draw the text
+                    unsafe {
+                        vexv5rt::vexDisplaySmallStringAt(tx, ty, text.as_ptr());
+                    }
+                },
             };
         }
     }
