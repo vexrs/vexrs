@@ -37,6 +37,8 @@ pub trait DisplayElement {
 }
 
 /// A shape that can be drawn
+/// Please note that text can not be detected as pressed, so a rectangle
+/// or circle will need to be used to make buttons.
 pub enum Shape {
     Rectangle {x1: i32, y1: i32, x2: i32, y2: i32, color: u32, fill: bool},
     Circle {cx: i32, cy: i32, r: i32, color: u32, fill: bool},
