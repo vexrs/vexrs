@@ -2,7 +2,7 @@
 
 use alloc::boxed::Box;
 
-use crate::{hardware::competition::CompetitionStatus, runtime::{runner::Runtime, util::get_runtime, MAX_TASKS}};
+use crate::{hardware::{competition::CompetitionStatus, display::Display}, runtime::{runner::Runtime, util::get_runtime, MAX_TASKS}};
 
 
 
@@ -23,8 +23,15 @@ pub fn os_init(user_entry: fn()) -> ! {
     // Initialize the runtime
     runtime.init();
 
+    // Create the global display
+    let mut display =  Box::new(Display::new());
+
+    // Initialize it
+    display.init();
+
     // Spawn the user task
     runtime.spawn(user_entry);
+
 
     // Set the current competition status
     let mut comp_status = CompetitionStatus::get_competition_status();
@@ -60,6 +67,13 @@ pub fn os_init(user_entry: fn()) -> ! {
             // Start the user task again
             rt.spawn(user_entry);
         }
+
+        //------------------------------//
+        //          Draw Tick           //
+        //------------------------------//
+
+        // Draw to the display
+        display.draw();
 
         // All loops need to yield
         get_runtime().yield_t();

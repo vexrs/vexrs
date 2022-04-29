@@ -39,9 +39,6 @@ impl<T> Mutex<T> {
         if !*self.lock.borrow() && self.queue.borrow().is_empty() {
             *self.lock.borrow_mut() = true;
 
-            // Before returning, yield to the next task
-            get_runtime().yield_t(); // YIELD POINT
-
             return MutexGuard { mutex: self };
         }
 
