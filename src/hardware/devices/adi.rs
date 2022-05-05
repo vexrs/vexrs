@@ -1,33 +1,29 @@
 
 
-/// An ADI digital in port for sensors such as the bumpers or limit switches.
-#[derive(Copy, Clone, PartialEq)]
-pub struct ADIDigitalIn {
+
+/// An enum that represents ADI devices
+#[derive(Default, Copy, Clone, PartialEq)]
+pub enum ADIDevice {
+    /// No device is attached to the given port
+    #[default] None,
+    
+}
+
+
+/// This structure creates ADI devices on a specified port
+pub struct ADIBuilder<'a> {
     pub port: u8,
-    pub device_no: u8,
+    pub device_manager: &'a mut super::DeviceManager
 }
 
-impl ADIDigitalIn {
-    /// Reads the value from the digital in port
-    pub fn read(&self) -> bool {
-        true
-    }
-}
+impl<'a> ADIBuilder<'a> {
 
-impl super::Device for ADIDigitalIn {
-    fn is_calibrated(&self) -> bool {
-        true
-    }
-
-    fn calibrate(&mut self) {
-        
-    }
-
-    fn get_ports(&self) -> (u8, u8) {
-        (self.port, self.device_no)
-    }
-
-    fn get_type(&self) -> super::DeviceType {
-        super::DeviceType::ADIDigitalIn
+    /// Creates a new raw ADI device on this port.
+    pub fn create_raw(&self) {
+        // If the current port on the device manager is not an ADI device,
+        // then panic
+        if self.device_manager.devices[self.port as usize].device_type != super::DeviceType::ADIRaw {
+            panic!("Port {} is not an ADI device", self.port);
+        }
     }
 }
