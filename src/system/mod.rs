@@ -2,7 +2,7 @@
 
 use alloc::boxed::Box;
 
-use crate::{hardware::{competition::CompetitionStatus, display::Display}, runtime::{runner::Runtime, util::get_runtime, MAX_TASKS}};
+use crate::{hardware::{competition::CompetitionStatus, display::Display, devices::DeviceManager}, runtime::{runner::Runtime, util::get_runtime, MAX_TASKS}};
 
 
 
@@ -28,6 +28,12 @@ pub fn os_init(user_entry: fn()) -> ! {
 
     // Initialize it
     display.init();
+
+    // Create a device manager
+    let mut device_manager = Box::new(DeviceManager::new());
+    
+    // Initialize it
+    device_manager.init();
 
     // Spawn the user task
     runtime.spawn(user_entry);

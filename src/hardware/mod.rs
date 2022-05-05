@@ -18,6 +18,8 @@ pub mod display;
 // Structures to manage devices plugged into smart and three-wire ports.
 pub mod devices;
 
+// The global device manager singleton.
+static mut DEVICE_MANAGER: *const devices::DeviceManager = 0 as *const devices::DeviceManager;
 
 
 // Utilities
