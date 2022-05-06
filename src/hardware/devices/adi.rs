@@ -1,6 +1,8 @@
+use alloc::vec::Vec;
+
 use crate::{hardware::util::get_device_manager, runtime::get_runtime};
 
-use super::{Device, ADIPort, ADIDevice, Encoder};
+use super::{Device, ADIPort, ADIDevice};
 
 
 
@@ -62,7 +64,7 @@ impl ADIDigitalIn {
     pub fn read(&self) -> bool {
 
         // If the port is not a digital in, panic
-        if get_adi_config(self.get_vex_device(), self.index) != ADIPort::DigitalIn {
+        if get_adi_config(self.get_vex_device(0), self.index) != ADIPort::DigitalIn {
             panic!("Port {} is not a digital in port", self.index);
         }
 
@@ -70,7 +72,7 @@ impl ADIDigitalIn {
         let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::DigitalIn);
 
         // Read the value
-        let value = get_adi_value(self.get_vex_device(), self.index);
+        let value = get_adi_value(self.get_vex_device(0), self.index);
 
         // Return it
         value != 0
@@ -141,35 +143,46 @@ impl ADIDigitalIn {
 }
 
 impl Device for ADIDigitalIn {
-
     fn init(&mut self) {
-        // Configure the port to be digital in
-        set_adi_config(self.get_vex_device(), self.index, ADIPort::DigitalIn);
+        // Set the port type
+        set_adi_config(self.get_vex_device(0), self.index, ADIPort::DigitalIn);
     }
 
     fn calibrate(&mut self) {
-        // Raw digital ports do not need to be calibrated
+        // Raw digital in ports do not need calibration
     }
 
+    fn get_smart_ports(&self) -> Vec<(u32, super::SmartPort)> {
+        // Get the device manager
+        let dm = crate::util::get_device_manager().unwrap();
+    
+        // Get the smart port
+        let port = dm.get_port(self.port);
+
+        // Return the smart port
+        vec![(self.port, port)]
+    }
 
     fn get_any(&self) -> &dyn core::any::Any {
         self
     }
-
-    fn get_port_number(&self) -> u32 {
-        self.port
-    }
 }
 
 impl ADIDevice for ADIDigitalIn {
-    fn new_adi(port: u32, index: u32) -> Self {
-        ADIDigitalIn { port, index, last_value: false }
+    fn new_adi(ports: Vec<(u32, u32)>) -> Self {
+        // Get the first port
+        let (port, index) = ports[0];
+
+        // Create a new ADI digital in device
+        ADIDigitalIn::new(port, index)
     }
 
-    fn get_adi_port(&self) -> ADIPort {
-        ADIPort::DigitalIn
+    fn get_adi_ports(&self) -> Vec<(u32, u32, ADIPort)> {
+        // Return the port
+        vec![(self.port, self.index, ADIPort::DigitalIn)]
     }
 }
+
 
 
 /// A basic ADI digital out device
@@ -191,7 +204,7 @@ impl ADIDigitalOut {
     pub fn write(&self, value: bool) {
 
         // If the port is not a digital out, panic
-        if get_adi_config(self.get_vex_device(), self.index) != ADIPort::DigitalOut {
+        if get_adi_config(self.get_vex_device(0), self.index) != ADIPort::DigitalOut {
             panic!("Port {} is not a digital out port", self.index);
         }
 
@@ -199,22 +212,29 @@ impl ADIDigitalOut {
         let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::DigitalOut);
 
         // Write the value
-        set_adi_value(self.get_vex_device(), self.index, if value { 1 } else { 0 });
+        set_adi_value(self.get_vex_device(0), self.index, if value { 1 } else { 0 });
     }
 }
 
 impl Device for ADIDigitalOut {
     fn init(&mut self) {
-        // Configure the port to be digital out
-        set_adi_config(self.get_vex_device(), self.index, ADIPort::DigitalOut);
+        // Set the port type
+        set_adi_config(self.get_vex_device(0), self.index, ADIPort::DigitalOut);
     }
 
     fn calibrate(&mut self) {
-        // Raw digital ports do not need to be calibrated
+        // Raw digital out ports do not need calibration
     }
 
-    fn get_port_number(&self) -> u32 {
-        self.port
+    fn get_smart_ports(&self) -> Vec<(u32, super::SmartPort)> {
+        // Get the device manager
+        let dm = crate::util::get_device_manager().unwrap();
+    
+        // Get the smart port
+        let port = dm.get_port(self.port);
+
+        // Return the smart port
+        vec![(self.port, port)]
     }
 
     fn get_any(&self) -> &dyn core::any::Any {
@@ -223,14 +243,20 @@ impl Device for ADIDigitalOut {
 }
 
 impl ADIDevice for ADIDigitalOut {
-    fn new_adi(port: u32, index: u32) -> Self {
-        ADIDigitalOut { port, index }
+    fn new_adi(ports: Vec<(u32, u32)>) -> Self {
+        // Get the first port
+        let (port, index) = ports[0];
+
+        // Create a new ADI digital out device
+        ADIDigitalOut::new(port, index)
     }
 
-    fn get_adi_port(&self) -> ADIPort {
-        ADIPort::DigitalOut
+    fn get_adi_ports(&self) -> Vec<(u32, u32, ADIPort)> {
+        // Return the port
+        vec![(self.port, self.index, ADIPort::DigitalOut)]
     }
 }
+
 
 
 /// A basic ADI analog in device
@@ -252,7 +278,7 @@ impl ADIAnalogIn {
     pub fn read(&self) -> i32 {
 
         // If the port is not a analog in, panic
-        if get_adi_config(self.get_vex_device(), self.index) != ADIPort::AnalogIn {
+        if get_adi_config(self.get_vex_device(0), self.index) != ADIPort::AnalogIn {
             panic!("Port {} is not a analog in port", self.index);
         }
 
@@ -260,22 +286,29 @@ impl ADIAnalogIn {
         let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::AnalogIn);
 
         // Read the value
-        get_adi_value(self.get_vex_device(), self.index)
+        get_adi_value(self.get_vex_device(0), self.index)
     }
 }
 
 impl Device for ADIAnalogIn {
     fn init(&mut self) {
-        // Configure the port to be analog in
-        set_adi_config(self.get_vex_device(), self.index, ADIPort::AnalogIn);
+        // Set the port type
+        set_adi_config(self.get_vex_device(0), self.index, ADIPort::AnalogIn);
     }
 
     fn calibrate(&mut self) {
-        
+        // Raw analog in ports do not need calibration
     }
 
-    fn get_port_number(&self) -> u32 {
-        self.port
+    fn get_smart_ports(&self) -> Vec<(u32, super::SmartPort)> {
+        // Get the device manager
+        let dm = crate::util::get_device_manager().unwrap();
+    
+        // Get the smart port
+        let port = dm.get_port(self.port);
+
+        // Return the smart port
+        vec![(self.port, port)]
     }
 
     fn get_any(&self) -> &dyn core::any::Any {
@@ -284,14 +317,21 @@ impl Device for ADIAnalogIn {
 }
 
 impl ADIDevice for ADIAnalogIn {
-    fn new_adi(port: u32, index: u32) -> Self {
-        ADIAnalogIn { port, index }
+    fn new_adi(ports: Vec<(u32, u32)>) -> Self {
+        // Get the first port
+        let (port, index) = ports[0];
+
+        // Create a new ADI analog in device
+        ADIAnalogIn::new(port, index)
     }
 
-    fn get_adi_port(&self) -> ADIPort {
-        ADIPort::AnalogIn
+    fn get_adi_ports(&self) -> Vec<(u32, u32, ADIPort)> {
+        // Return the port
+        vec![(self.port, self.index, ADIPort::AnalogIn)]
     }
 }
+
+
 
 /// A basic ADI analog out device
 #[derive(Copy, Clone)]
@@ -312,7 +352,7 @@ impl ADIAnalogOut {
     pub fn write(&self, value: i32) {
 
         // If the port is not a analog out, panic
-        if get_adi_config(self.get_vex_device(), self.index) != ADIPort::AnalogOut {
+        if get_adi_config(self.get_vex_device(0), self.index) != ADIPort::AnalogOut {
             panic!("Port {} is not a analog out port", self.index);
         }
 
@@ -320,22 +360,29 @@ impl ADIAnalogOut {
         let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::AnalogOut);
 
         // Write the value
-        set_adi_value(self.get_vex_device(), self.index, value);
+        set_adi_value(self.get_vex_device(0), self.index, value);
     }
 }
 
 impl Device for ADIAnalogOut {
     fn init(&mut self) {
-        // Configure the port to be analog out
-        set_adi_config(self.get_vex_device(), self.index, ADIPort::AnalogOut);
+        // Set the port type
+        set_adi_config(self.get_vex_device(0), self.index, ADIPort::AnalogOut);
     }
 
     fn calibrate(&mut self) {
-        
+        // Raw analog out ports do not need calibration
     }
 
-    fn get_port_number(&self) -> u32 {
-        self.port
+    fn get_smart_ports(&self) -> Vec<(u32, super::SmartPort)> {
+        // Get the device manager
+        let dm = crate::util::get_device_manager().unwrap();
+    
+        // Get the smart port
+        let port = dm.get_port(self.port);
+
+        // Return the smart port
+        vec![(self.port, port)]
     }
 
     fn get_any(&self) -> &dyn core::any::Any {
@@ -344,60 +391,16 @@ impl Device for ADIAnalogOut {
 }
 
 impl ADIDevice for ADIAnalogOut {
-    fn new_adi(port: u32, index: u32) -> Self {
-        ADIAnalogOut { port, index }
+    fn new_adi(ports: Vec<(u32, u32)>) -> Self {
+        // Get the first port
+        let (port, index) = ports[0];
+
+        // Create a new ADI analog out device
+        ADIAnalogOut::new(port, index)
     }
 
-    fn get_adi_port(&self) -> ADIPort {
-        ADIPort::AnalogOut
-    }
-}
-
-
-/// The ADI quadrature encoder input port
-#[derive(Copy, Clone)]
-pub struct ADIQuadEncoder {
-    /// The port number of this device
-    port: u32,
-    /// The ADI port that this device is connected to
-    index: u32,
-}
-
-impl Device for ADIQuadEncoder {
-    fn init(&mut self) {
-        // Configure the port to be quadrature encoder
-        set_adi_config(self.get_vex_device(), self.index, ADIPort::QuadEncoder);
-    }
-
-    fn calibrate(&mut self) {
-        // Raw quadrature encoders do not need to be calibrated
-    }
-
-    fn get_port_number(&self) -> u32 {
-        self.port
-    }
-
-    fn get_any(&self) -> &dyn core::any::Any {
-        self
-    }
-}
-
-impl ADIDevice for ADIQuadEncoder {
-    fn new_adi(port: u32, index: u32) -> Self {
-        ADIQuadEncoder { port, index }
-    }
-
-    fn get_adi_port(&self) -> ADIPort {
-        ADIPort::QuadEncoder
-    }
-}
-
-impl Encoder for ADIQuadEncoder {
-    fn get_encoder_ticks(&self) -> i32 {
-        // Lock the mutex for the port
-        let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::QuadEncoder);
-
-        // Read the value
-        get_adi_value(self.get_vex_device(), self.index)
+    fn get_adi_ports(&self) -> Vec<(u32, u32, ADIPort)> {
+        // Return the port
+        vec![(self.port, self.index, ADIPort::AnalogOut)]
     }
 }

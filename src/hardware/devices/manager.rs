@@ -164,17 +164,22 @@ impl DeviceManager {
     }
 
     /// Gets or sets up a ADI port
-    pub fn get_adi_device<T: 'static + ADIDevice + Clone>(&mut self, port: u32, index: u32) -> T {
-        // Bounds check the port and index
-        if port > 21 || index > 7 {
-            panic!("ADI port {}:{} is out of bounds", port, index);
+    pub fn get_adi_device<T: 'static + ADIDevice + Clone>(&mut self, ports: Vec<(u32, u32)>) -> T {
+        // Bounds check the ports and indexes
+        for (port, index) in ports.iter() {
+            if *port > 21 || *index > 7 {
+                panic!("ADI port {}:{} is out of bounds", port, index);
+            }
         }
 
         // Create the new device
-        let mut device = T::new_adi(port, index);
+        let mut device = T::new_adi(ports);
 
-        // Reserve an ADI port for it
-        self.reserve_adi(port, index, device.get_adi_port());
+        // Reserve all required ADI ports
+        for p in device.get_adi_ports() {
+            self.reserve_adi(p.0, p.1, p.2);
+        }
+        
 
         // Initialize the device
         device.init();

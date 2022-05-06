@@ -1,5 +1,7 @@
 use core::any::Any;
 
+use alloc::vec::Vec;
+
 // The device manager
 pub mod manager;
 
@@ -63,11 +65,11 @@ pub enum DeviceType<'a> {
 /// including initialization, calibration, and port verification.
 /// This is the base trait for all devices.
 pub trait Device {
-    /// Gets the vex device pointer
-    fn get_vex_device(&self) -> vexv5rt::V5_DeviceT {
+    /// Gets the vex device pointer of one of the device's ports
+    fn get_vex_device(&self, index: u32) -> vexv5rt::V5_DeviceT {
 
         // Get the smart port
-        let port = self.get_port_number();
+        let port = self.get_smart_ports()[index as usize].0;
 
         // Ensure it is within the range 0-21
         if port > 21 {
@@ -91,13 +93,8 @@ pub trait Device {
         true
     }
 
-    /// Gets the port type of the device
-    fn get_port_type(&self) -> SmartPort {
-        crate::util::get_device_manager().unwrap().get_port(self.get_port_number())
-    }
-
-    /// Gets the smart port number of the device
-    fn get_port_number(&self) -> u32;
+    /// Gets a list of smart ports for this device
+    fn get_smart_ports(&self) -> Vec<(u32, SmartPort)>;
 
     /// Gets the any type of this device
     /// that allows us to convert it to our struct of choice
@@ -108,10 +105,10 @@ pub trait Device {
 /// Very similar to device, except for ADI devices
 pub trait ADIDevice: Device {
     /// Creates an instance of this device
-    fn new_adi(port: u32, index: u32) -> Self;
+    fn new_adi(ports: Vec<(u32, u32)>) -> Self;
 
-    /// Returns the type of ADI port
-    fn get_adi_port(&self) -> ADIPort;
+    /// Returns a list of ADI ports this device uses
+    fn get_adi_ports(&self) -> Vec<(u32, u32, ADIPort)>;
 }
 
 
