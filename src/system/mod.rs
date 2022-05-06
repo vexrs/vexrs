@@ -30,7 +30,7 @@ pub fn os_init(user_entry: fn()) -> ! {
     display.init();
 
     // Create a device manager
-    let device_manager = Box::new(DeviceManager::new());
+    let mut device_manager = Box::new(DeviceManager::new());
     
     // Initialize it
     device_manager.init();

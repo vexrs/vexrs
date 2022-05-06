@@ -1,4 +1,6 @@
-use super::{Device, SmartPort, ADIPort, DeviceType, manager::DeviceManager};
+use crate::hardware::util::get_device_manager;
+
+use super::{Device, SmartPort, ADIPort, DeviceType, manager::DeviceManager, ADIDevice};
 
 
 
@@ -33,38 +35,37 @@ fn get_adi_value(device: vexv5rt::V5_DeviceT, port: u32) -> i32 {
 
 
 /// A basic ADI digital in device
+#[derive(Copy, Clone)]
 pub struct ADIDigitalIn {
     /// The port number of this device
     port_number: u32,
     /// The ADI port that this device is connected to
     port: u32,
-    /// The device manager that owns this device
-    device_manager: &'static mut DeviceManager,
 }
-
 
 impl ADIDigitalIn {
     /// Creates a new ADI digital in device
-    pub fn new(port_number: u32, port: u32) -> ADIDigitalIn {
-        let device_manager: Option<&'static mut DeviceManager> = crate::util::get_device_manager();
+    pub fn new(port_number: u32, port: u32) -> Self {
         ADIDigitalIn {
             port_number,
             port,
-            device_manager: device_manager.unwrap(),
         }
     }
 
-    /// Reads the value of the digital in device
+    /// Reads from the ADI digital in device
     pub fn read(&self) -> i32 {
-        get_adi_value(self.get_vex_device(), self.port)
+        // Lock the mutex for the port
+        let _mtx = get_device_manager().unwrap().lock_adi_device(self.port_number, self.port, ADIPort::DigitalIn);
+
+        // Read the value
+        let value = get_adi_value(self.get_vex_device(), self.port);
+
+        // Return it
+        value
     }
 }
 
-
 impl Device for ADIDigitalIn {
-    fn get_type(&self) -> DeviceType {
-        DeviceType::ADIDigitalIn(self)
-    }
 
     fn init(&mut self) {
         // Configure the port to be digital in
@@ -75,16 +76,23 @@ impl Device for ADIDigitalIn {
         // Raw digital ports do not need to be calibrated
     }
 
-    fn get_port_type(&self) -> (SmartPort, ADIPort) {
-        (self.device_manager.get_port(self.port_number), ADIPort::DigitalIn)
-    }
-
-    fn get_port_number(&self) -> (u32, u32) {
-        (self.port_number, self.port)
-    }
 
     fn get_any(&self) -> &dyn core::any::Any {
         self
     }
+
+    fn get_port_number(&self) -> u32 {
+        self.port_number
+    }
 }
 
+
+impl ADIDevice for ADIDigitalIn {
+    fn new_adi(port: u32, index: u32) -> Self {
+        ADIDigitalIn { port_number: port, port: index }
+    }
+
+    fn get_adi_port(&self) -> ADIPort {
+        ADIPort::DigitalIn
+    }
+}
