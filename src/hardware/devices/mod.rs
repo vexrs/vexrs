@@ -132,8 +132,11 @@ pub trait SmartDevice: Device {
 /// The trait implemented by encoder devices
 pub trait Encoder: Device {
     // Gets the number of ticks the encoder has moved
-    fn get_ticks(&self) -> i32;
+    fn get_ticks(&self) -> f64;
 
     // Gets the rate, in ticks/sec the encoder is moving
-    fn get_rate(&self) -> i32;
+    fn get_rate(&self) -> f64;
+
+    // Resets the encoder
+    fn reset_encoder(&mut self);
 }

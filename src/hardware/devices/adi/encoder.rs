@@ -41,8 +41,7 @@ impl Device for ADIEncoder {
     fn calibrate(&mut self) {
         // The brain takes care of this for us.
         // Just reset the encoders back to zero
-        set_adi_value(self.get_vex_device(0), self.ports[0].1, 0);
-        set_adi_value(self.get_vex_device(1), self.ports[1].1, 0);
+        self.reset_encoder();
     }
 
     fn get_smart_ports(&self) -> Vec<(u32, crate::hardware::devices::SmartPort)> {
@@ -80,11 +79,16 @@ impl ADIDevice for ADIEncoder {
 }
 
 impl Encoder for ADIEncoder {
-    fn get_ticks(&self) -> i32 {
-        self.read_encoder().0
+    fn get_ticks(&self) -> f64 {
+        self.read_encoder().0.into()
     }
 
-    fn get_rate(&self) -> i32 {
-        self.read_encoder().1
+    fn get_rate(&self) -> f64 {
+        self.read_encoder().1.into()
+    }
+
+    fn reset_encoder(&mut self) {
+        set_adi_value(self.get_vex_device(0), self.ports[0].1, 0);
+        set_adi_value(self.get_vex_device(1), self.ports[1].1, 0);
     }
 }
