@@ -108,9 +108,6 @@ impl DeviceManager {
 
     /// Locks the mutex of an ADI port
     pub fn lock_adi_device(&mut self, port: u32, index: u32, adi_type: ADIPort) -> MutexGuard<()> {
-        // Make sure the port and index are zero-indexed
-        let port = port ;
-        let index = index ;
 
         // Bounds check the port and index
         if port > 21 || index > 7 {
@@ -132,9 +129,11 @@ impl DeviceManager {
 
         // Check if this port exists in the list of devices
         let mut found = false;
-        for device in self.adi_ports.iter() {
+        let mut loc = 0;
+        for (i, device) in self.adi_ports.iter().enumerate() {
             if device.0 == port && device.1 == index {
                 found = true;
+                loc = i;
                 break;
             }
         }
@@ -142,10 +141,11 @@ impl DeviceManager {
         // If it does not, then add it (we already know it *should* be there because we verified above)
         if !found {
             self.adi_ports.push((port, index, Mutex::new(())));
+            loc = self.adi_ports.len() - 1;
         }
 
         // Lock the mutex and return the guard
-        self.adi_ports[index as usize].2.acquire()
+        self.adi_ports[loc as usize].2.acquire()
     }
 
 

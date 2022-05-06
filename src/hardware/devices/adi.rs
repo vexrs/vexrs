@@ -1,6 +1,6 @@
 use crate::{hardware::util::get_device_manager, runtime::get_runtime};
 
-use super::{Device, ADIPort, ADIDevice};
+use super::{Device, ADIPort, ADIDevice, Encoder};
 
 
 
@@ -172,6 +172,67 @@ impl ADIDevice for ADIDigitalIn {
 }
 
 
+/// A basic ADI digital out device
+#[derive(Copy, Clone)]
+pub struct ADIDigitalOut {
+    /// The port number of this device
+    port: u32,
+    /// The ADI port that this device is connected to
+    index: u32,
+}
+
+impl ADIDigitalOut {
+    /// Creates a new ADI digital out device
+    pub fn new(port: u32, index: u32) -> Self {
+        ADIDigitalOut { port, index }
+    }
+
+    /// Writes to the ADI digital out device
+    pub fn write(&self, value: bool) {
+
+        // If the port is not a digital out, panic
+        if get_adi_config(self.get_vex_device(), self.index) != ADIPort::DigitalOut {
+            panic!("Port {} is not a digital out port", self.index);
+        }
+
+        // Lock the mutex for the port
+        let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::DigitalOut);
+
+        // Write the value
+        set_adi_value(self.get_vex_device(), self.index, if value { 1 } else { 0 });
+    }
+}
+
+impl Device for ADIDigitalOut {
+    fn init(&mut self) {
+        // Configure the port to be digital out
+        set_adi_config(self.get_vex_device(), self.index, ADIPort::DigitalOut);
+    }
+
+    fn calibrate(&mut self) {
+        // Raw digital ports do not need to be calibrated
+    }
+
+    fn get_port_number(&self) -> u32 {
+        self.port
+    }
+
+    fn get_any(&self) -> &dyn core::any::Any {
+        self
+    }
+}
+
+impl ADIDevice for ADIDigitalOut {
+    fn new_adi(port: u32, index: u32) -> Self {
+        ADIDigitalOut { port, index }
+    }
+
+    fn get_adi_port(&self) -> ADIPort {
+        ADIPort::DigitalOut
+    }
+}
+
+
 /// A basic ADI analog in device
 #[derive(Copy, Clone)]
 pub struct ADIAnalogIn {
@@ -289,5 +350,54 @@ impl ADIDevice for ADIAnalogOut {
 
     fn get_adi_port(&self) -> ADIPort {
         ADIPort::AnalogOut
+    }
+}
+
+
+/// The ADI quadrature encoder input port
+#[derive(Copy, Clone)]
+pub struct ADIQuadEncoder {
+    /// The port number of this device
+    port: u32,
+    /// The ADI port that this device is connected to
+    index: u32,
+}
+
+impl Device for ADIQuadEncoder {
+    fn init(&mut self) {
+        // Configure the port to be quadrature encoder
+        set_adi_config(self.get_vex_device(), self.index, ADIPort::QuadEncoder);
+    }
+
+    fn calibrate(&mut self) {
+        // Raw quadrature encoders do not need to be calibrated
+    }
+
+    fn get_port_number(&self) -> u32 {
+        self.port
+    }
+
+    fn get_any(&self) -> &dyn core::any::Any {
+        self
+    }
+}
+
+impl ADIDevice for ADIQuadEncoder {
+    fn new_adi(port: u32, index: u32) -> Self {
+        ADIQuadEncoder { port, index }
+    }
+
+    fn get_adi_port(&self) -> ADIPort {
+        ADIPort::QuadEncoder
+    }
+}
+
+impl Encoder for ADIQuadEncoder {
+    fn get_encoder_ticks(&self) -> i32 {
+        // Lock the mutex for the port
+        let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::QuadEncoder);
+
+        // Read the value
+        get_adi_value(self.get_vex_device(), self.index)
     }
 }

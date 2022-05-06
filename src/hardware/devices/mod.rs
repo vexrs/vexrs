@@ -6,6 +6,7 @@ pub mod manager;
 // ADI port implementations
 pub mod adi;
 
+
 /// Types of ADI ports
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -18,6 +19,8 @@ pub enum ADIPort {
     DigitalIn = 2,
     /// Digital out is for anything that recieves a digital on/off signal.
     DigitalOut = 3,
+    /// The vex quadrature encoder
+    QuadEncoder = 14,
     /// There is no sensor connected to this port
     #[default] None = 0xff,
 }
@@ -109,4 +112,11 @@ pub trait ADIDevice: Device {
 
     /// Returns the type of ADI port
     fn get_adi_port(&self) -> ADIPort;
+}
+
+
+
+/// The trait implemented by encoder devices
+pub trait Encoder: Device {
+    fn get_encoder_ticks(&self) -> i32;
 }
