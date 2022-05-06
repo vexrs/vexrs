@@ -115,5 +115,9 @@ pub trait ADIDevice: Device {
 
 /// The trait implemented by encoder devices
 pub trait Encoder: Device {
-    fn get_encoder_ticks(&self) -> i32;
+    // Gets the number of ticks the encoder has moved
+    fn get_ticks(&self) -> i32;
+
+    // Gets the rate, in ticks/sec the encoder is moving
+    fn get_rate(&self) -> i32;
 }

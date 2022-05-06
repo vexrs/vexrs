@@ -6,6 +6,16 @@ use super::{Device, ADIPort, ADIDevice};
 
 
 
+// ADI encoder
+pub mod encoder;
+
+
+
+
+
+
+
+
 /// Sets the port type of an adi port
 fn set_adi_config(device: vexv5rt::V5_DeviceT, port: u32,  port_type: ADIPort) {
     unsafe {

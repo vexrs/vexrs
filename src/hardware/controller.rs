@@ -118,10 +118,10 @@ impl Controller {
         let new_value = self.get_digital(button);
 
         // If the values are different and the new value is true, the button has been newly pressed
-        if (btn_status != new_value) && new_value {
+        if btn_status != new_value {
             // Set it in the cache
             self.button_status.acquire()[button as usize-6] = new_value;
-            true
+            new_value
         } else {
             false
         }
@@ -136,10 +136,10 @@ impl Controller {
         let new_value = self.get_digital(button);
 
         // If the values are different and the new value is false, the button has been newly released
-        if (btn_status != new_value) && !new_value {
+        if (btn_status != new_value) {
             // Set it in the cache
             self.button_status.acquire()[button as usize-6] = new_value;
-            true
+            !new_value
         } else {
             false
         }
