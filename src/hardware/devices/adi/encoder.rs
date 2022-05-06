@@ -19,6 +19,9 @@ impl ADIEncoder {
     /// Reads the data from the encoder ports
     fn read_encoder(&self) -> (i32, i32) {
 
+        // Lock the device
+        let _mtx = self.lock();
+
         // Read from the first port
         let v1 = get_adi_value(self.get_vex_device(0), self.ports[0].1);
 
@@ -33,6 +36,10 @@ impl ADIEncoder {
 
 impl Device for ADIEncoder {
     fn init(&mut self) {
+
+        // Lock the device
+        let _mtx = self.lock();
+
         // Set both ports as an encoder
         set_adi_config(self.get_vex_device(0), self.ports[0].1, ADIPort::QuadEncoder);
         set_adi_config(self.get_vex_device(1), self.ports[1].1, ADIPort::QuadEncoder);
@@ -45,6 +52,9 @@ impl Device for ADIEncoder {
     }
 
     fn get_smart_ports(&self) -> Vec<(u32, crate::hardware::devices::SmartPort)> {
+        // Lock the device
+        let _mtx = self.lock();
+
         // Get the smart ports that we use
         let mut ports = Vec::new();
         for port in self.ports.iter() {
@@ -80,6 +90,7 @@ impl ADIDevice for ADIEncoder {
 
 impl Encoder for ADIEncoder {
     fn get_ticks(&self) -> f64 {
+
         self.read_encoder().0.into()
     }
 
@@ -88,6 +99,10 @@ impl Encoder for ADIEncoder {
     }
 
     fn reset_encoder(&mut self) {
+
+        // Lock the device
+        let _mtx = self.lock();
+
         set_adi_value(self.get_vex_device(0), self.ports[0].1, 0);
         set_adi_value(self.get_vex_device(1), self.ports[1].1, 0);
     }

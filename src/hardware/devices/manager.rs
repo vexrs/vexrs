@@ -148,7 +148,10 @@ impl DeviceManager {
         self.adi_ports[loc as usize].2.acquire()
     }
 
-
+    /// Locks the mutex of a smart port
+    pub fn lock_smart_device(&mut self, port: u32) -> MutexGuard<SmartPort> {
+        self.smart_ports[port as usize].acquire()
+    }
 
     /*
     /*****************************************************\
