@@ -1,4 +1,4 @@
-use crate::hardware::util::get_device_manager;
+use crate::{hardware::util::get_device_manager, runtime::{mutex::Mutex, get_runtime}};
 
 use super::{Device, SmartPort, ADIPort, DeviceType, manager::DeviceManager, ADIDevice};
 
@@ -41,6 +41,8 @@ pub struct ADIDigitalIn {
     port: u32,
     /// The ADI port that this device is connected to
     index: u32,
+    /// The previously read value
+    last_value: bool,
 }
 
 impl ADIDigitalIn {
@@ -49,6 +51,7 @@ impl ADIDigitalIn {
         ADIDigitalIn {
             port,
             index,
+            last_value: false,
         }
     }
 
@@ -63,6 +66,69 @@ impl ADIDigitalIn {
         // Return it
         value != 0
     }
+
+    /// Returns true if the digital signal went high since the previous check
+    pub fn on_rising_edge(&mut self) -> bool {
+
+        // Get the new value
+        let new_value = self.read();
+
+        // If the values are different and the new value is true, the digital signal 
+        // went high since the previous check
+        if (self.last_value != new_value) && new_value {
+            // Set it in the cache and return true
+            self.last_value = new_value;
+            true
+        } else {
+            // Otherwise, return false
+            false
+        }
+
+    }
+
+    /// Returns true if the digital signal went low since the previous check
+    pub fn on_falling_edge(&mut self) -> bool {
+
+        // Get the new value
+        let new_value = self.read();
+
+        // If the values are different and the new value is false, the digital signal 
+        // went low since the previous check
+        if (self.last_value != new_value) && !new_value {
+            // Set it in the cache and return true
+            self.last_value = new_value;
+            true
+        } else {
+            // Otherwise, return false
+            false
+        }
+
+    }
+
+
+    /// Blocks until the digital signal goes high
+    pub fn await_high(&mut self) {
+        // Get the runtime
+        let runtime = get_runtime();
+
+        // yield for as long as the value is false
+        while !self.read() {
+            runtime.yield_t();
+        }
+    }
+
+    /// Blocks until the digital signal goes low
+    pub fn await_low(&mut self) {
+        // Get the runtime
+        let runtime = get_runtime();
+
+        // yield for as long as the value is true
+        while self.read() {
+            runtime.yield_t();
+        }
+    }
+
+    
 }
 
 impl Device for ADIDigitalIn {
@@ -88,7 +154,7 @@ impl Device for ADIDigitalIn {
 
 impl ADIDevice for ADIDigitalIn {
     fn new_adi(port: u32, index: u32) -> Self {
-        ADIDigitalIn { port, index }
+        ADIDigitalIn { port, index, last_value: false }
     }
 
     fn get_adi_port(&self) -> ADIPort {
