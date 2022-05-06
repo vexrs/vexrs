@@ -18,7 +18,7 @@ fn get_adi_config(device: vexv5rt::V5_DeviceT, port: u32) -> ADIPort {
 }
 
 /// Sets the value of an ADI port
-fn set_adi_value(device: vexv5rt::V5_DeviceT, port: u32, value: i32) {
+fn g(device: vexv5rt::V5_DeviceT, port: u32, value: i32) {
     unsafe {
         vexv5rt::vexDeviceAdiValueSet(device, port, value);
     }
@@ -63,7 +63,7 @@ impl ADIDigitalIn {
 
 impl Device for ADIDigitalIn {
     fn get_type(&self) -> DeviceType {
-        DeviceType::ADIDigitalIn
+        DeviceType::ADIDigitalIn(self)
     }
 
     fn init(&mut self) {
@@ -81,6 +81,10 @@ impl Device for ADIDigitalIn {
 
     fn get_port_number(&self) -> (u32, u32) {
         (self.port_number, self.port)
+    }
+
+    fn get_any(&self) -> &dyn core::any::Any {
+        self
     }
 }
 

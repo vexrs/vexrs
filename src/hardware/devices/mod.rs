@@ -1,3 +1,8 @@
+use core::any::Any;
+
+use self::adi::ADIDigitalIn;
+
+
 
 
 // The device manager
@@ -8,7 +13,7 @@ pub mod adi;
 
 /// Types of ADI ports
 #[repr(u8)]
-#[derive(Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub enum ADIPort {
     /// Analog in is for sensors such as the potentiometer or gyroscope
     AnalogIn = 0,
@@ -36,7 +41,7 @@ impl ADIPort {
 }
 
 /// A Type of device connected to a smart port
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub enum SmartPort {
     /// No device is connected to this smart port
     #[default] None,
@@ -49,10 +54,10 @@ pub enum SmartPort {
 
 /// This is an enum that allows us to nicely provide a way to get the underlying struct
 /// that implements the device trait.
-pub enum DeviceType {
+pub enum DeviceType<'a> {
     /// This device is an unknown device that we know is plugged in.
     EmptyDevice,
-    ADIDigitalIn,
+    ADIDigitalIn(&'a adi::ADIDigitalIn),
 }
 
 
@@ -73,7 +78,7 @@ pub trait Device {
         let port = port - 1;
 
         // Ensure it is within the range 0-21
-        if port < 0 || port > 21 {
+        if port > 21 {
             panic!("Port number is out of range");
         }
 
@@ -96,4 +101,8 @@ pub trait Device {
     /// including the smart port and the ADI port (in that order)
     /// Non ADI ports always return zero as the second tuple member.
     fn get_port_number(&self) -> (u32, u32);
+
+    /// Gets the any type of this device
+    /// that allows us to convert it to our struct of choice
+    fn get_any(&self) -> &dyn Any;
 }
