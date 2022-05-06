@@ -4,7 +4,7 @@ use alloc::{vec::Vec, boxed::Box};
 
 use crate::runtime::mutex::{Mutex, MutexGuard};
 
-use super::{SmartPort, Device, ADIPort, adi::ADIDigitalIn, DeviceType, ADIDevice};
+use super::{SmartPort, Device, ADIPort, ADIDevice};
 
 
 
@@ -22,6 +22,13 @@ pub struct DeviceManager {
     /// Devices can only be added to this vector if it is confirmed that their
     /// smart port is not occupied. Once it is comfirmed, their port is reserved.
     pub devices: Vec<Box<dyn Device>>,
+}
+
+impl Default for DeviceManager {
+    /// Creates a default device manager
+    fn default() -> Self {
+        DeviceManager::new()
+    }
 }
 
 impl DeviceManager {
@@ -97,35 +104,6 @@ impl DeviceManager {
                 panic!("ADI port {} is already occupied by a different device", index);
             }
         }
-    }
-
-    /// Adds an ADI digital device
-    fn add_adi_digital_in(&mut self, port: u32, index: u32) -> ADIDigitalIn {
-
-        // Bounds check the port and index
-        if port > 21 || index > 7 {
-            panic!("ADI port {}:{} is out of bounds", port, index);
-        }
-        
-        // Make sure the port and device are of the proper type
-        match *self.smart_ports[port as usize ].acquire() {
-            SmartPort::ADIExpander(ref mut adi_port) => {
-                match adi_port[index as usize ] {
-                    ADIPort::DigitalIn => {},
-                    _ => panic!("ADI port {}:{} is not a digital in", port, index),
-                }
-            },
-            _ => panic!("Smart port {} is not an ADI expander", port),
-        };
-
-        // Create the device
-        let device = ADIDigitalIn::new(port, index);
-
-        // Add the device to the list of devices
-        self.devices.push(Box::new(device));
-
-        // Do some magic to get the device out of the vector and return it
-        *self.devices.last().unwrap().get_any().downcast_ref().unwrap()
     }
 
     /// Locks the mutex of an ADI port

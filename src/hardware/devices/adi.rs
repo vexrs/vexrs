@@ -1,6 +1,6 @@
-use crate::{hardware::util::get_device_manager, runtime::{mutex::Mutex, get_runtime}};
+use crate::{hardware::util::get_device_manager, runtime::get_runtime};
 
-use super::{Device, SmartPort, ADIPort, DeviceType, manager::DeviceManager, ADIDevice};
+use super::{Device, ADIPort, ADIDevice};
 
 
 
@@ -20,7 +20,7 @@ fn get_adi_config(device: vexv5rt::V5_DeviceT, port: u32) -> ADIPort {
 }
 
 /// Sets the value of an ADI port
-fn g(device: vexv5rt::V5_DeviceT, port: u32, value: i32) {
+fn set_adi_value(device: vexv5rt::V5_DeviceT, port: u32, value: i32) {
     unsafe {
         vexv5rt::vexDeviceAdiValueSet(device, port, value);
     }

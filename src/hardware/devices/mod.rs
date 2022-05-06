@@ -1,10 +1,5 @@
 use core::any::Any;
 
-use self::adi::ADIDigitalIn;
-
-
-
-
 // The device manager
 pub mod manager;
 
