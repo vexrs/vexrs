@@ -157,4 +157,7 @@ pub trait Encoder: Device {
 
     // Resets the encoder
     fn reset_encoder(&mut self);
+
+    // Sets the zero point of the encoder
+    fn set_zero_position(&mut self, position: f64);
 }
