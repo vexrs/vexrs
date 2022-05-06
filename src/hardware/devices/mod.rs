@@ -83,6 +83,11 @@ pub trait Device {
     /// Calibrates the device
     fn calibrate(&mut self);
 
+    /// Returns true if the device is calibrated
+    fn is_calibrated(&self) -> bool {
+        true
+    }
+
     /// Gets the port type of the device
     fn get_port_type(&self) -> SmartPort {
         crate::util::get_device_manager().unwrap().get_port(self.get_port_number())

@@ -203,7 +203,6 @@ impl ADIAnalogIn {
     }
 }
 
-
 impl Device for ADIAnalogIn {
     fn init(&mut self) {
         // Configure the port to be analog in
@@ -230,5 +229,65 @@ impl ADIDevice for ADIAnalogIn {
 
     fn get_adi_port(&self) -> ADIPort {
         ADIPort::AnalogIn
+    }
+}
+
+/// A basic ADI analog out device
+#[derive(Copy, Clone)]
+pub struct ADIAnalogOut {
+    /// The port number of this device
+    port: u32,
+    /// The ADI port that this device is connected to
+    index: u32,
+}
+
+impl ADIAnalogOut {
+    /// Creates a new ADI analog out device
+    pub fn new(port: u32, index: u32) -> Self {
+        ADIAnalogOut { port, index }
+    }
+
+    /// Writes to the ADI analog out device
+    pub fn write(&self, value: i32) {
+
+        // If the port is not a analog out, panic
+        if get_adi_config(self.get_vex_device(), self.index) != ADIPort::AnalogOut {
+            panic!("Port {} is not a analog out port", self.index);
+        }
+
+        // Lock the mutex for the port
+        let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::AnalogOut);
+
+        // Write the value
+        set_adi_value(self.get_vex_device(), self.index, value);
+    }
+}
+
+impl Device for ADIAnalogOut {
+    fn init(&mut self) {
+        // Configure the port to be analog out
+        set_adi_config(self.get_vex_device(), self.index, ADIPort::AnalogOut);
+    }
+
+    fn calibrate(&mut self) {
+        
+    }
+
+    fn get_port_number(&self) -> u32 {
+        self.port
+    }
+
+    fn get_any(&self) -> &dyn core::any::Any {
+        self
+    }
+}
+
+impl ADIDevice for ADIAnalogOut {
+    fn new_adi(port: u32, index: u32) -> Self {
+        ADIAnalogOut { port, index }
+    }
+
+    fn get_adi_port(&self) -> ADIPort {
+        ADIPort::AnalogOut
     }
 }
