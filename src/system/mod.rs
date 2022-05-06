@@ -2,7 +2,7 @@
 
 use alloc::boxed::Box;
 
-use crate::{hardware::{competition::CompetitionStatus, display::Display, devices::DeviceManager}, runtime::{runner::Runtime, util::get_runtime, MAX_TASKS}};
+use crate::{hardware::{competition::CompetitionStatus, display::Display, devices::manager::DeviceManager}, runtime::{runner::Runtime, util::get_runtime, MAX_TASKS}};
 
 
 

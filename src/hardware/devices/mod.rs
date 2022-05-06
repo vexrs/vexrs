@@ -8,6 +8,7 @@ pub mod adi;
 
 /// Types of ADI ports
 #[repr(u8)]
+#[derive(Clone, Copy, Default)]
 pub enum ADIPort {
     /// Analog in is for sensors such as the potentiometer or gyroscope
     AnalogIn = 0,
@@ -18,7 +19,7 @@ pub enum ADIPort {
     /// Digital out is for anything that recieves a digital on/off signal.
     DigitalOut = 3,
     /// There is no sensor connected to this port
-    None = 0xff,
+    #[default] None = 0xff,
 }
 
 impl ADIPort {
@@ -35,9 +36,10 @@ impl ADIPort {
 }
 
 /// A Type of device connected to a smart port
+#[derive(Default, Clone, Copy)]
 pub enum SmartPort {
     /// No device is connected to this smart port
-    None,
+    #[default] None,
     /// An ADI expander is connected to this smart port
     /// ADI expanders can also have their ports reserved
     /// so they have 8x ADI Ports.
@@ -93,5 +95,5 @@ pub trait Device {
     /// Gets the port number of the device
     /// including the smart port and the ADI port (in that order)
     /// Non ADI ports always return zero as the second tuple member.
-    fn get_port_number(&self) -> (u8, u8);
+    fn get_port_number(&self) -> (u32, u32);
 }

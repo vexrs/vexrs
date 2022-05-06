@@ -17,6 +17,16 @@ pub struct Mutex<T> {
     data: UnsafeCell<T>
 }
 
+impl<T: Default> Default for Mutex<T> {
+    fn default() -> Self {
+        Self {
+            lock: RefCell::new(false),
+            queue: RefCell::new(VecDeque::new()),
+            data: UnsafeCell::new(T::default())
+        }
+    }
+}
+
 impl<T> Mutex<T> {
     /// Creates a new mutex
     pub fn new(data: T) -> Mutex<T> {

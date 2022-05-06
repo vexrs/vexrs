@@ -19,7 +19,7 @@ pub mod display;
 pub mod devices;
 
 // The global device manager singleton.
-static mut DEVICE_MANAGER: *const devices::DeviceManager = 0 as *const devices::DeviceManager;
+static mut DEVICE_MANAGER: *const devices::manager::DeviceManager = 0 as *const devices::manager::DeviceManager;
 
 
 // Utilities

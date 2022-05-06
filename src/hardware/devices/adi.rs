@@ -1,4 +1,4 @@
-use super::{Device, SmartPort, ADIPort, DeviceType};
+use super::{Device, SmartPort, ADIPort, DeviceType, manager::DeviceManager};
 
 
 
@@ -34,30 +34,29 @@ fn get_adi_value(device: vexv5rt::V5_DeviceT, port: u32) -> i32 {
 
 /// A basic ADI digital in device
 pub struct ADIDigitalIn {
-    /// The smart port that this device is connected to
-    smart_port: SmartPort,
     /// The port number of this device
     port_number: u32,
     /// The ADI port that this device is connected to
     port: u32,
+    /// The device manager that owns this device
+    device_manager: &'static mut DeviceManager,
 }
 
 
 impl ADIDigitalIn {
     /// Creates a new ADI digital in device
-    pub fn new(smart_port: SmartPort, port_number: u32, port: u32) -> ADIDigitalIn {
+    pub fn new(port_number: u32, port: u32) -> ADIDigitalIn {
+        let device_manager: Option<&'static mut DeviceManager> = crate::util::get_device_manager();
         ADIDigitalIn {
-            smart_port,
             port_number,
             port,
+            device_manager: device_manager.unwrap(),
         }
     }
 
     /// Reads the value of the digital in device
     pub fn read(&self) -> i32 {
-        unsafe {
-            vexv5rt::vexDeviceAdiValueGet(self.get_vex_device(), self.port)
-        }
+        get_adi_value(self.get_vex_device(), self.port)
     }
 }
 
@@ -77,10 +76,10 @@ impl Device for ADIDigitalIn {
     }
 
     fn get_port_type(&self) -> (SmartPort, ADIPort) {
-        (self.smart_port, ADIPort::DigitalIn)
+        (self.device_manager.get_port(self.port_number), ADIPort::DigitalIn)
     }
 
-    fn get_port_number(&self) -> (u8, u8) {
+    fn get_port_number(&self) -> (u32, u32) {
         (self.port_number, self.port)
     }
 }

@@ -391,8 +391,13 @@ unsafe extern "C" fn touch_callback(event: u32, x: i32, y: i32) {
     // Get the display
     let disp = get_display();
 
+    // If it is none, just return
+    if disp.is_none() {
+        return;
+    }
+
     // Run the touch callback
-    disp.on_touch(match event {
+    disp.unwrap().on_touch(match event {
         0 => TouchEvent::Release,
         1 => TouchEvent::Press,
         2 => TouchEvent::AutoPress,
