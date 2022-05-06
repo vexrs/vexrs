@@ -1,6 +1,20 @@
 use crate::hardware::devices::{SmartPort, Device, SmartDevice, Encoder};
 
 
+/// Enum of what faults a motor is experiencing
+#[derive(Copy, Clone)]
+pub enum MotorFaults {
+    /// No faults
+    None,
+    /// The motor is over temperature
+    OverTemp,
+    /// The h-bridge is faulting
+    HBridgeFault,
+    /// The motor is over current
+    OverCurrent,
+    /// The h-bridge is over current
+    HBridgeOverCurrent,
+}
 
 /// The units to use in an encoder tick
 #[derive(Default, Copy, Clone)]
@@ -57,7 +71,7 @@ impl SmartMotor {
     }
 
     /// Sets the voltage of the motor, clampung it to the range -127 to 127
-    pub fn set_voltage(&mut self, voltage: i32) {
+    pub fn move_voltage(&mut self, voltage: i32) {
 
         // Lock the device
         let _mtx = self.lock();
@@ -94,6 +108,136 @@ impl SmartMotor {
             vexv5rt::vexDeviceMotorRelativeTargetSet(self.get_vex_device(0), position, speed);
         }
     }
+
+    /// Sets the velocity of the motor
+    pub fn move_velocity(&mut self, velocity: i32) {
+
+        // Lock the device
+        let _mtx = self.lock();
+
+        // Set the velocity
+        unsafe {
+            vexv5rt::vexDeviceMotorVelocitySet(self.get_vex_device(0), velocity);
+        }
+    }
+
+    /// Stops the motor
+    pub fn stop(&mut self) {
+
+        // Lock the device
+        let _mtx = self.lock();
+
+        // Stop the motor
+        unsafe {
+            vexv5rt::vexDeviceMotorVelocitySet(self.get_vex_device(0), 0);
+        }
+    }
+
+
+    /// Updates the target velocity for the function move_relative and move_absolute
+    pub fn set_target_velocity(&mut self, velocity: i32) {
+            
+        // Lock the device
+        let _mtx = self.lock();
+
+        // Set the target velocity
+        unsafe {
+            vexv5rt::vexDeviceMotorVelocityUpdate(self.get_vex_device(0), velocity)
+        }
+    }
+
+    /// Gets the target velocity
+    pub fn get_target_velocity(&mut self) -> i32 {
+
+        // Lock the device
+        let _mtx = self.lock();
+
+        // Get the target velocity
+        unsafe {
+            vexv5rt::vexDeviceMotorVelocityGet(self.get_vex_device(0))
+        }
+    }
+
+    /// Gets the target position
+    pub fn get_target_position(&mut self) -> f64 {
+
+        // Lock the device
+        let _mtx = self.lock();
+
+        // Get the target position
+        unsafe {
+            vexv5rt::vexDeviceMotorTargetGet(self.get_vex_device(0))
+        }
+    }
+    
+
+    /**************************************************************************
+     * Telemetry functions                                                    *
+     **************************************************************************/
+    
+    /// Get the velocity of the motor
+    pub fn get_velocity(&mut self) -> i32 {
+
+        // Lock the device
+        let _mtx = self.lock();
+
+        // Get the velocity
+        unsafe {
+            vexv5rt::vexDeviceMotorVelocityGet(self.get_vex_device(0))
+        }
+    }
+
+    /// Get how much current the motor is drawing in mA
+    pub fn get_current(&mut self) -> i32 {
+
+        // Lock the device
+        let _mtx = self.lock();
+
+        // Get the current
+        unsafe {
+            vexv5rt::vexDeviceMotorCurrentGet(self.get_vex_device(0))
+        }
+    }
+
+    /// Get the direction the motor is spinning in
+    // 1 for forward, -1 for reverse
+    pub fn get_direction(&mut self) -> i32 {
+
+        // Lock the device
+        let _mtx = self.lock();
+
+        // Get the direction
+        unsafe {
+            vexv5rt::vexDeviceMotorDirectionGet(self.get_vex_device(0))
+        }
+    }
+
+    /// Gets the efficiency of the motor in percent.
+    /// 100% is the motor is moving but drawing no power, 0% is the motor is drawing
+    /// power but not moving.
+    pub fn get_efficiency(&mut self) -> f64 {
+
+        // Lock the device
+        let _mtx = self.lock();
+
+        // Get the efficiency
+        unsafe {
+            vexv5rt::vexDeviceMotorEfficiencyGet(self.get_vex_device(0))
+        }
+    }
+
+    /// Returns a bitmask of the faults that have occured on the motor
+    pub fn get_faults(&mut self) -> MotorFaults {
+
+        // Lock the device
+        let _mtx = self.lock();
+
+        // Get the faults
+        unsafe {
+            vexv5rt::vexDeviceMotorFaultsGet(self.get_vex_device(0))
+        }
+    }
+
 }
 
 
