@@ -158,6 +158,7 @@ impl DeviceManager {
 
     /// Reserves a port for an adi expander
     pub fn adi_expander(&mut self, port: u32) {
+
         // Reserve the port
         self.reserve_port(port, SmartPort::ADIExpander(Default::default()));
     }

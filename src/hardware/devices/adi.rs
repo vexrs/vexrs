@@ -12,10 +12,13 @@ fn set_adi_config(device: vexv5rt::V5_DeviceT, port: u32,  port_type: ADIPort) {
 }
 
 /// Gets the port type of an adi port
+/// # Safety
+/// This function may dereference a null pointer. It is the responsibility of the caller to ensure that the device is valid
+/// and that the port is in range 0-7
 fn get_adi_config(device: vexv5rt::V5_DeviceT, port: u32) -> ADIPort {
     unsafe {
         let port_type = vexv5rt::vexDeviceAdiPortConfigGet(device, port);
-        ADIPort::from_u32(port_type)
+        ADIPort::from_u32(port_type)   
     }
 }
 
@@ -57,6 +60,12 @@ impl ADIDigitalIn {
 
     /// Reads from the ADI digital in device
     pub fn read(&self) -> bool {
+
+        // If the port is not a digital in, panic
+        if get_adi_config(self.get_vex_device(), self.index) != ADIPort::DigitalIn {
+            panic!("Port {} is not a digital in port", self.index);
+        }
+
         // Lock the mutex for the port
         let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::DigitalIn);
 
@@ -162,3 +171,64 @@ impl ADIDevice for ADIDigitalIn {
     }
 }
 
+
+/// A basic ADI analog in device
+#[derive(Copy, Clone)]
+pub struct ADIAnalogIn {
+    /// The port number of this device
+    port: u32,
+    /// The ADI port that this device is connected to
+    index: u32,
+}
+
+impl ADIAnalogIn {
+    /// Creates a new ADI analog in device
+    pub fn new(port: u32, index: u32) -> Self {
+        ADIAnalogIn { port, index }
+    }
+
+    /// Reads from the ADI analog in device
+    pub fn read(&self) -> i32 {
+
+        // If the port is not a analog in, panic
+        if get_adi_config(self.get_vex_device(), self.index) != ADIPort::AnalogIn {
+            panic!("Port {} is not a analog in port", self.index);
+        }
+
+        // Lock the mutex for the port
+        let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::AnalogIn);
+
+        // Read the value
+        get_adi_value(self.get_vex_device(), self.index)
+    }
+}
+
+
+impl Device for ADIAnalogIn {
+    fn init(&mut self) {
+        // Configure the port to be analog in
+        set_adi_config(self.get_vex_device(), self.index, ADIPort::AnalogIn);
+    }
+
+    fn calibrate(&mut self) {
+        
+    }
+
+    fn get_port_number(&self) -> u32 {
+        self.port
+    }
+
+    fn get_any(&self) -> &dyn core::any::Any {
+        self
+    }
+}
+
+impl ADIDevice for ADIAnalogIn {
+    fn new_adi(port: u32, index: u32) -> Self {
+        ADIAnalogIn { port, index }
+    }
+
+    fn get_adi_port(&self) -> ADIPort {
+        ADIPort::AnalogIn
+    }
+}
