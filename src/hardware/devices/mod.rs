@@ -3,6 +3,9 @@
 // The device manager
 pub mod manager;
 
+// ADI port implementations
+pub mod adi;
+
 /// Types of ADI ports
 #[repr(u8)]
 pub enum ADIPort {
@@ -16,6 +19,19 @@ pub enum ADIPort {
     DigitalOut = 3,
     /// There is no sensor connected to this port
     None = 0xff,
+}
+
+impl ADIPort {
+    /// Converts a u32 to an ADIPort
+    pub fn from_u32(value: u32) -> ADIPort {
+        match value {
+            0 => ADIPort::AnalogIn,
+            1 => ADIPort::AnalogOut,
+            2 => ADIPort::DigitalIn,
+            3 => ADIPort::DigitalOut,
+            _ => ADIPort::None,
+        }
+    }
 }
 
 /// A Type of device connected to a smart port
@@ -32,6 +48,8 @@ pub enum SmartPort {
 /// This is an enum that allows us to nicely provide a way to get the underlying struct
 /// that implements the device trait.
 pub enum DeviceType {
+    /// This device is an unknown device that we know is plugged in.
+    EmptyDevice,
     ADIDigitalIn,
 }
 
@@ -42,6 +60,26 @@ pub enum DeviceType {
 pub trait Device {
     /// Gets the type of the device, including the struct that implements this trait
     fn get_type(&self) -> DeviceType;
+
+    /// Gets the vex device pointer
+    fn get_vex_device(&self) -> vexv5rt::V5_DeviceT {
+
+        // Get the smart port
+        let port = self.get_port_number().0;
+
+        // Subtract one from the port number to get the correct index
+        let port = port - 1;
+
+        // Ensure it is within the range 0-21
+        if port < 0 || port > 21 {
+            panic!("Port number is out of range");
+        }
+
+        // Get the pointer
+        unsafe {
+            vexv5rt::vexDeviceGetByIndex(port)
+        }
+    }
 
     /// Initializes the device
     fn init(&mut self);

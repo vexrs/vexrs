@@ -1,10 +1,10 @@
 // A structure that manages the state of all devices connected to the brain
 
-use alloc::vec::Vec;
+use alloc::{vec::Vec, boxed::Box};
 
 use crate::runtime::mutex::Mutex;
 
-use super::SmartPort;
+use super::{SmartPort, Device};
 
 
 
@@ -19,5 +19,5 @@ struct DeviceManager {
     /// This is a vector of all devices on the robot brain.
     /// Devices can only be added to this vector if it is confirmed that their
     /// smart port is not occupied. Once it is comfirmed, their port is reserved.
-    devices: Vec<Mutex<dyn Device>>,
+    devices: Vec<Mutex<Box<dyn Device>>>,
 }
