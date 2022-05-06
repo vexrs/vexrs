@@ -8,6 +8,8 @@ pub mod manager;
 // ADI port implementations
 pub mod adi;
 
+// Smart devices
+pub mod smart;
 
 /// Types of ADI ports
 #[repr(u8)]
@@ -49,6 +51,8 @@ pub enum SmartPort {
     /// ADI expanders can also have their ports reserved
     /// so they have 8x ADI Ports.
     ADIExpander([ADIPort; 8]),
+    /// A motor is connected to this smart port
+    Motor,
 }
 
 
@@ -111,6 +115,18 @@ pub trait ADIDevice: Device {
     fn get_adi_ports(&self) -> Vec<(u32, u32, ADIPort)>;
 }
 
+
+/// Very similar to device, except for Smart devices
+pub trait SmartDevice: Device {
+    /// Creates an instance of this device
+    fn new_smart(port: u32) -> Self;
+
+    /// Returns the smart port this device is connected to
+    fn get_smart_port(&self) -> u32;
+
+    /// Returns the smart port type this device uses
+    fn get_smart_port_type(&self) -> SmartPort;
+}
 
 
 /// The trait implemented by encoder devices

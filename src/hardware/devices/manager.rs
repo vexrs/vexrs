@@ -4,7 +4,7 @@ use alloc::{vec::Vec, boxed::Box};
 
 use crate::runtime::mutex::{Mutex, MutexGuard};
 
-use super::{SmartPort, Device, ADIPort, ADIDevice};
+use super::{SmartPort, Device, ADIPort, ADIDevice, SmartDevice};
 
 
 
@@ -190,6 +190,28 @@ impl DeviceManager {
         device
     }
 
+    /// Gets or sets up a smart device
+    pub fn get_smart_device<T: 'static + SmartDevice + Clone>(&mut self, port: u32) -> T {
+
+        // Bounds check the port
+        if port > 21 {
+            panic!("Port {} is out of bounds", port);
+        }
+
+        // Create the new device
+        let mut device = T::new_smart(port);
+
+        // Reserve the port
+        self.reserve_port(port, device.get_smart_port_type());
+
+        // Initialize the device
+        device.init();
+
+        // Add the device to the list of devices
+        self.devices.push(Box::new(device.clone()));
+
+        device
+    }
 
     /// Gets a copy of the smart port at the given index
     pub fn get_port(&self, index: u32) -> SmartPort {
