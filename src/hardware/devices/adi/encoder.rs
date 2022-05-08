@@ -1,6 +1,4 @@
 use alloc::vec::Vec;
-use micromath::F
-
 use crate::hardware::{devices::{ADIPort, Device, ADIDevice, Encoder}, util::get_device_manager};
 
 use super::{set_adi_config, set_adi_value, get_adi_value};
@@ -112,8 +110,8 @@ impl Encoder for ADIEncoder {
         // Lock the device
         let _mtx = self.lock();
 
-        set_adi_value(self.get_vex_device(0), self.ports[0].1, position.trunc() as i64);
-        set_adi_value(self.get_vex_device(1), self.ports[1].1, position.trunc() as i64);
+        set_adi_value(self.get_vex_device(0), self.ports[0].1, (position as i64).try_into().unwrap());
+        set_adi_value(self.get_vex_device(1), self.ports[1].1, (position as i64).try_into().unwrap());
     }
 
     

@@ -121,6 +121,14 @@ pub trait Device {
         // Return the vector of locked ports
         locked_ports
     }
+
+    
+
+    /// Run on every OS tick
+    fn tick(&mut self) {}
+
+    /// Runs every time statistics should be updated
+    fn tick_statistics(&mut self) {}
 }
 
 
@@ -149,10 +157,10 @@ pub trait SmartDevice: Device {
 
 /// The trait implemented by encoder devices
 pub trait Encoder: Device {
-    // Gets the number of ticks the encoder has moved
+    // Gets the number of degrees the encoder has turned
     fn get_ticks(&self) -> f64;
 
-    // Gets the rate, in ticks/sec the encoder is moving
+    // Gets the rate, in deg/sec the encoder is moving
     fn get_rate(&self) -> f64;
 
     // Resets the encoder
