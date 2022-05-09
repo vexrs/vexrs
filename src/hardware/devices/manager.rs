@@ -15,13 +15,13 @@ pub struct DeviceManager {
     /// Note that each smart port does not mean a single device.
     /// For example, ADI expanders can have 8 ADI devices, and
     /// motors have both encoders and motors.
-    pub smart_ports: [Mutex<SmartPort>; 22],
+    pub smart_ports: Mutex<[Mutex<SmartPort>; 22]>,
     /// A vector of the mutex locks for all ADI devices
-    pub adi_ports: Vec<(u32,u32, Mutex<()>)>,
+    pub adi_ports: Mutex<Vec<(u32,u32, Mutex<()>)>>,
     /// This is a vector of all devices on the robot brain.
     /// Devices can only be added to this vector if it is confirmed that their
     /// smart port is not occupied. Once it is comfirmed, their port is reserved.
-    pub devices: Vec<Box<dyn Device>>,
+    pub devices: Mutex<Vec<Box<dyn Device + Send + Sync>>>,
 }
 
 impl Default for DeviceManager {
@@ -38,23 +38,18 @@ impl DeviceManager {
         Self {
             smart_ports: Default::default(),
             adi_ports: Default::default(),
-            devices: Vec::new(),
+            devices: Default::default(),
         }
     }
 
     /// Initializes the device manager
-    pub fn init(&mut self) {
-        // Set the global device manager
-        unsafe {
-            crate::hardware::DEVICE_MANAGER = self as *const DeviceManager;
-        }
-
+    pub fn init(&self) {
         // Initialize smart port 22 as the built-in ADI expander
         self.adi_expander(21);
     }
 
     /// Reserves a smart port
-    pub fn reserve_port(&mut self, port: u32, device: SmartPort) {
+    pub fn reserve_port(&self, port: u32, device: SmartPort) {
 
         // Bounds check the port
         if port > 21{
@@ -62,7 +57,7 @@ impl DeviceManager {
         }
         
         // Lock the mutex for this device
-        let mut sport = self.smart_ports[port as usize].acquire();
+        let mut sport = self.smart_ports.acquire()[port as usize].acquire();
 
         
 
@@ -78,8 +73,7 @@ impl DeviceManager {
     }
 
     /// Reserves a port for an adi device
-    fn reserve_adi(&mut self, port: u32, index: u32, device: ADIPort) {
-
+    fn reserve_adi(&self, port: u32, index: u32, device: ADIPort) {
         // Bounds check the port and index
         if port > 21 || index > 7 {
             panic!("ADI port {}:{} is out of bounds", port, index);
@@ -87,7 +81,7 @@ impl DeviceManager {
 
 
         // Get the smart port
-        let mut smart_port = self.smart_ports[port as usize].acquire();
+        let mut smart_port = self.smart_ports.acquire()[port as usize].acquire();
 
         // Get the ADI port or panic if it is not an adi expander
         let adi_port = match *smart_port {
@@ -107,7 +101,10 @@ impl DeviceManager {
     }
 
     /// Locks the mutex of an ADI port
-    pub fn lock_adi_device(&mut self, port: u32, index: u32, adi_type: ADIPort) -> MutexGuard<()> {
+    pub fn lock_adi_device(&self, port: u32, index: u32, adi_type: ADIPort) -> MutexGuard<()> {
+
+        // Lock the ADI ports list
+        let mut adi_ports = self.adi_ports.acquire();
 
         // Bounds check the port and index
         if port > 21 || index > 7 {
@@ -117,7 +114,7 @@ impl DeviceManager {
 
 
         // Verify that the port is an ADI expander
-        match *self.smart_ports[port as usize].acquire() {
+        match *self.smart_ports.acquire()[port as usize].acquire() {
             SmartPort::ADIExpander(ref mut adi_port) => {
                 // Verify that the port matches the ADI type
                 if adi_port[index as usize] != adi_type {
@@ -130,7 +127,7 @@ impl DeviceManager {
         // Check if this port exists in the list of devices
         let mut found = false;
         let mut loc = 0;
-        for (i, device) in self.adi_ports.iter().enumerate() {
+        for (i, device) in adi_ports.iter().enumerate() {
             if device.0 == port && device.1 == index {
                 found = true;
                 loc = i;
@@ -140,17 +137,18 @@ impl DeviceManager {
 
         // If it does not, then add it (we already know it *should* be there because we verified above)
         if !found {
-            self.adi_ports.push((port, index, Mutex::new(())));
-            loc = self.adi_ports.len() - 1;
+            adi_ports.push((port, index, Mutex::new(())));
+            loc = adi_ports.len() - 1;
         }
 
         // Lock the mutex and return the guard
-        self.adi_ports[loc as usize].2.acquire()
+        adi_ports[loc as usize].2.acquire()
     }
 
     /// Locks the mutex of a smart port
-    pub fn lock_smart_device(&mut self, port: u32) -> MutexGuard<SmartPort> {
-        self.smart_ports[port as usize].acquire()
+    pub fn lock_smart_device(&self, port: u32) -> MutexGuard<SmartPort> {
+        let smart_ports = self.smart_ports.acquire();
+        smart_ports[port as usize].acquire()
     }
 
     /*
@@ -160,14 +158,14 @@ impl DeviceManager {
     */
 
     /// Reserves a port for an adi expander
-    pub fn adi_expander(&mut self, port: u32) {
+    pub fn adi_expander(&self, port: u32) {
 
         // Reserve the port
         self.reserve_port(port, SmartPort::ADIExpander(Default::default()));
     }
 
     /// Gets or sets up a ADI port
-    pub fn get_adi_device<T: 'static + ADIDevice + Clone>(&mut self, ports: Vec<(u32, u32)>) -> T {
+    pub fn get_adi_device<T: 'static + ADIDevice + Send + Sync + Clone>(&self, ports: Vec<(u32, u32)>) -> T {
         // Bounds check the ports and indexes
         for (port, index) in ports.iter() {
             if *port > 21 || *index > 7 {
@@ -188,13 +186,13 @@ impl DeviceManager {
         device.init();
 
         // Add the device to the list of devices
-        self.devices.push(Box::new(device.clone()));
+        self.devices.acquire().push(Box::new(device.clone()));
 
         device
     }
 
     /// Gets or sets up a smart device
-    pub fn get_smart_device<T: 'static + SmartDevice + Clone>(&mut self, port: u32) -> T {
+    pub fn get_smart_device<T: 'static + SmartDevice + Send + Sync + Clone>(&self, port: u32) -> T {
 
         // Bounds check the port
         if port > 21 {
@@ -211,7 +209,7 @@ impl DeviceManager {
         device.init();
 
         // Add the device to the list of devices
-        self.devices.push(Box::new(device.clone()));
+        self.devices.acquire().push(Box::new(device.clone()));
 
         device
     }
@@ -219,7 +217,7 @@ impl DeviceManager {
     /// Gets a copy of the smart port at the given index
     pub fn get_port(&self, index: u32) -> SmartPort {
         // Acquire the mutex on the smart port
-        let mtx = self.smart_ports[index as usize].acquire();
+        let mtx = self.smart_ports.acquire()[index as usize].acquire();
 
         // Return the smart port info.
         *mtx
@@ -228,17 +226,17 @@ impl DeviceManager {
 
 
     /// Tick all devices
-    pub fn tick(&mut self) {
+    pub fn tick(&self) {
         // Tick all devices
-        for device in self.devices.iter_mut() {
+        for device in self.devices.acquire().iter_mut() {
             device.tick();
         }
     }
 
     /// Tick the telemetry on all devices
-    pub fn tick_telemetry(&mut self) {
+    pub fn tick_telemetry(&self) {
         // Tick all devices
-        for device in self.devices.iter_mut() {
+        for device in self.devices.acquire().iter_mut() {
             device.tick_telemetry();
         }
     }

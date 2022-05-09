@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use crate::hardware::{devices::{ADIPort, Device, ADIDevice, Encoder}, util::get_device_manager};
+use crate::hardware::devices::{ADIPort, Device, ADIDevice, Encoder};
 
 use super::{set_adi_config, set_adi_value, get_adi_value};
 
@@ -57,7 +57,7 @@ impl Device for ADIEncoder {
         // Get the smart ports that we use
         let mut ports = Vec::new();
         for port in self.ports.iter() {
-            ports.push((port.0, get_device_manager().unwrap().get_port(port.0)));
+            ports.push((port.0, crate::DEVICE_MANAGER.get_port(port.0)));
         }
         ports
     }

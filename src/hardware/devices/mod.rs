@@ -4,16 +4,19 @@ use alloc::vec::Vec;
 
 use crate::runtime::mutex::MutexGuard;
 
-use super::util::get_device_manager;
 
 // The device manager
 pub mod manager;
+pub use manager::DeviceManager;
 
 // ADI port implementations
 pub mod adi;
 
 // Smart devices
 pub mod smart;
+
+
+
 
 /// Types of ADI ports
 #[repr(u8)]
@@ -115,7 +118,7 @@ pub trait Device {
         let mut locked_ports = Vec::<MutexGuard<SmartPort>>::new();
 
         for (port, _) in self.get_smart_ports() {
-            locked_ports.push(get_device_manager().unwrap().lock_smart_device(port));
+            locked_ports.push(crate::DEVICE_MANAGER.lock_smart_device(port));
         }
 
         // Return the vector of locked ports

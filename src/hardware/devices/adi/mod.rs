@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-use crate::{hardware::util::get_device_manager, runtime::get_runtime};
+use crate::runtime::get_runtime;
 
 use super::{Device, ADIPort, ADIDevice};
 
@@ -79,7 +79,7 @@ impl ADIDigitalIn {
         }
 
         // Lock the mutex for the port
-        let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::DigitalIn);
+        let _mtx = crate::DEVICE_MANAGER.lock_adi_device(self.port, self.index, ADIPort::DigitalIn);
 
         // Read the value
         let value = get_adi_value(self.get_vex_device(0), self.index);
@@ -163,11 +163,8 @@ impl Device for ADIDigitalIn {
     }
 
     fn get_smart_ports(&self) -> Vec<(u32, super::SmartPort)> {
-        // Get the device manager
-        let dm = crate::util::get_device_manager().unwrap();
-    
         // Get the smart port
-        let port = dm.get_port(self.port);
+        let port = crate::DEVICE_MANAGER.get_port(self.port);
 
         // Return the smart port
         vec![(self.port, port)]
@@ -219,7 +216,7 @@ impl ADIDigitalOut {
         }
 
         // Lock the mutex for the port
-        let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::DigitalOut);
+        let _mtx = crate::DEVICE_MANAGER.lock_adi_device(self.port, self.index, ADIPort::DigitalOut);
 
         // Write the value
         set_adi_value(self.get_vex_device(0), self.index, if value { 1 } else { 0 });
@@ -237,11 +234,8 @@ impl Device for ADIDigitalOut {
     }
 
     fn get_smart_ports(&self) -> Vec<(u32, super::SmartPort)> {
-        // Get the device manager
-        let dm = crate::util::get_device_manager().unwrap();
-    
         // Get the smart port
-        let port = dm.get_port(self.port);
+        let port = crate::DEVICE_MANAGER.get_port(self.port);
 
         // Return the smart port
         vec![(self.port, port)]
@@ -293,7 +287,7 @@ impl ADIAnalogIn {
         }
 
         // Lock the mutex for the port
-        let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::AnalogIn);
+        let _mtx = crate::DEVICE_MANAGER.lock_adi_device(self.port, self.index, ADIPort::AnalogIn);
 
         // Read the value
         get_adi_value(self.get_vex_device(0), self.index)
@@ -310,12 +304,9 @@ impl Device for ADIAnalogIn {
         // Raw analog in ports do not need calibration
     }
 
-    fn get_smart_ports(&self) -> Vec<(u32, super::SmartPort)> {
-        // Get the device manager
-        let dm = crate::util::get_device_manager().unwrap();
-    
+    fn get_smart_ports(&self) -> Vec<(u32, super::SmartPort)> {    
         // Get the smart port
-        let port = dm.get_port(self.port);
+        let port = crate::DEVICE_MANAGER.get_port(self.port);
 
         // Return the smart port
         vec![(self.port, port)]
@@ -367,7 +358,7 @@ impl ADIAnalogOut {
         }
 
         // Lock the mutex for the port
-        let _mtx = get_device_manager().unwrap().lock_adi_device(self.port, self.index, ADIPort::AnalogOut);
+        let _mtx = crate::DEVICE_MANAGER.lock_adi_device(self.port, self.index, ADIPort::AnalogOut);
 
         // Write the value
         set_adi_value(self.get_vex_device(0), self.index, value);
@@ -385,11 +376,9 @@ impl Device for ADIAnalogOut {
     }
 
     fn get_smart_ports(&self) -> Vec<(u32, super::SmartPort)> {
-        // Get the device manager
-        let dm = crate::util::get_device_manager().unwrap();
-    
+
         // Get the smart port
-        let port = dm.get_port(self.port);
+        let port = crate::DEVICE_MANAGER.get_port(self.port);
 
         // Return the smart port
         vec![(self.port, port)]
