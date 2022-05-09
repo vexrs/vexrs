@@ -6,8 +6,6 @@ use crate::{hardware::{competition::CompetitionStatus, display::Display, devices
 
 
 
-/// The address of the user program's entry point.
-static mut USER_ENTRY: fn() = || {};
 
 /// Runs when the OS task starts in order to initialize the system
 pub fn os_init(user_entry: fn()) -> ! {

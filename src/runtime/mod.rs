@@ -20,10 +20,6 @@ pub mod util;
 pub use runner::*;
 pub use task::*;
 pub use util::*;
-
-// The global runtime singleton. This is a pointer to the actual runtime
-static mut RUNTIME: *const Runtime = 0 as *const Runtime;
-
 // A default stack size of 8192 bytes should be good.
 // This will almost certainly made larger later, but we are using this for ease
 // of development, and because this is what 
