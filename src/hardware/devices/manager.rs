@@ -224,4 +224,22 @@ impl DeviceManager {
         // Return the smart port info.
         *mtx
     }
+
+
+
+    /// Tick all devices
+    pub fn tick(&mut self) {
+        // Tick all devices
+        for device in self.devices.iter_mut() {
+            device.tick();
+        }
+    }
+
+    /// Tick the telemetry on all devices
+    pub fn tick_telemetry(&mut self) {
+        // Tick all devices
+        for device in self.devices.iter_mut() {
+            device.tick_telemetry();
+        }
+    }
 }
