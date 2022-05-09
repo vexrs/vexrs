@@ -8,11 +8,8 @@ use crate::hardware::timer::Timer;
 use super::runner::Runtime;
 
 /// Gets the global runtime
-pub fn get_runtime() -> &'static mut Runtime {
-    unsafe {
-        let rt = super::RUNTIME as *mut Runtime;
-        &mut *rt
-    }
+pub fn get_runtime<'a>() -> &'a Runtime {
+    &crate::RUNTIME
 }
 
 // A utility function to get the stack pointer

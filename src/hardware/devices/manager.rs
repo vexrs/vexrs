@@ -21,7 +21,7 @@ pub struct DeviceManager {
     /// This is a vector of all devices on the robot brain.
     /// Devices can only be added to this vector if it is confirmed that their
     /// smart port is not occupied. Once it is comfirmed, their port is reserved.
-    pub devices: Vec<Box<dyn Device>>,
+    pub devices: Vec<Box<dyn Device + Send + Sync>>,
 }
 
 impl Default for DeviceManager {
@@ -44,11 +44,6 @@ impl DeviceManager {
 
     /// Initializes the device manager
     pub fn init(&mut self) {
-        // Set the global device manager
-        unsafe {
-            crate::hardware::DEVICE_MANAGER = self as *const DeviceManager;
-        }
-
         // Initialize smart port 22 as the built-in ADI expander
         self.adi_expander(21);
     }
@@ -167,7 +162,7 @@ impl DeviceManager {
     }
 
     /// Gets or sets up a ADI port
-    pub fn get_adi_device<T: 'static + ADIDevice + Clone>(&mut self, ports: Vec<(u32, u32)>) -> T {
+    pub fn get_adi_device<T: 'static + ADIDevice + Send + Sync + Clone>(&mut self, ports: Vec<(u32, u32)>) -> T {
         // Bounds check the ports and indexes
         for (port, index) in ports.iter() {
             if *port > 21 || *index > 7 {
@@ -194,7 +189,7 @@ impl DeviceManager {
     }
 
     /// Gets or sets up a smart device
-    pub fn get_smart_device<T: 'static + SmartDevice + Clone>(&mut self, port: u32) -> T {
+    pub fn get_smart_device<T: 'static + SmartDevice + Send + Sync + Clone>(&mut self, port: u32) -> T {
 
         // Bounds check the port
         if port > 21 {

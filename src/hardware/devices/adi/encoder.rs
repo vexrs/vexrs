@@ -57,7 +57,7 @@ impl Device for ADIEncoder {
         // Get the smart ports that we use
         let mut ports = Vec::new();
         for port in self.ports.iter() {
-            ports.push((port.0, get_device_manager().unwrap().get_port(port.0)));
+            ports.push((port.0, get_device_manager().get_port(port.0)));
         }
         ports
     }

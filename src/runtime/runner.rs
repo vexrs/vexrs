@@ -42,14 +42,9 @@ impl Runtime {
         }
     }
 
-    /// This function sets our runtime to the global runtime variable
-    /// and registers the timer interupt
+    /// Initializes the runtime
     pub fn init(&self) {
-        unsafe {
-            // Set the global runtime
-            super::RUNTIME = self as *const Runtime;
-            
-        }
+        // TODO: Is this even needed?
     }
 
 

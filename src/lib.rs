@@ -49,3 +49,12 @@ pub use ceros_macro::ceros_main;
 
 // Export the macros in alloc
 pub use alloc::{format, vec};
+
+
+
+// Global singletons
+lazy_static::lazy_static! {
+    static ref RUNTIME: runtime::Runtime = runtime::Runtime::new();
+    static ref DISPLAY: runtime::mutex::Mutex<hardware::display::Display> = runtime::mutex::Mutex::new(hardware::display::Display::new());
+    static ref DEVICE_MANAGER: runtime::mutex::Mutex<hardware::devices::manager::DeviceManager> = runtime::mutex::Mutex::new(hardware::devices::manager::DeviceManager::new());
+}

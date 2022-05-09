@@ -109,13 +109,13 @@ pub trait Device {
     fn get_any(&self) -> &dyn Any;
 
     /// Locks all of the device's smart ports
-    fn lock(&self) -> Vec<MutexGuard<SmartPort>>{
+    fn lock<'a>(&self) -> Vec<MutexGuard<'a,SmartPort>>{
 
         // Create a vector of the locked ports
         let mut locked_ports = Vec::<MutexGuard<SmartPort>>::new();
 
         for (port, _) in self.get_smart_ports() {
-            locked_ports.push(get_device_manager().unwrap().lock_smart_device(port));
+            locked_ports.push(get_device_manager().lock_smart_device(port));
         }
 
         // Return the vector of locked ports

@@ -303,12 +303,9 @@ impl Display {
 
     
 
-    /// Initializes the display, adding it to the global singleton
+    /// Initializes the display
     pub fn init(&self) {
         unsafe {
-            // Set the global runtime
-            super::DISPLAY = self as *const Display;
-
             // Setup the touch callback
             vexv5rt::vexTouchUserCallbackSet(Some(touch_callback));
         }
@@ -391,13 +388,8 @@ unsafe extern "C" fn touch_callback(event: u32, x: i32, y: i32) {
     // Get the display
     let disp = get_display();
 
-    // If it is none, just return
-    if disp.is_none() {
-        return;
-    }
-
     // Run the touch callback
-    disp.unwrap().on_touch(match event {
+    disp.on_touch(match event {
         0 => TouchEvent::Release,
         1 => TouchEvent::Press,
         2 => TouchEvent::AutoPress,

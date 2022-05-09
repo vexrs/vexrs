@@ -9,11 +9,6 @@ use crate::{hardware::{competition::CompetitionStatus, display::Display, devices
 
 /// Runs when the OS task starts in order to initialize the system
 pub fn os_init(user_entry: fn()) -> ! {
-    
-    // Set the global user entry
-    unsafe {
-        USER_ENTRY = user_entry;
-    }
 
     // Create the global runtime
     let mut runtime = Box::new(Runtime::new());
