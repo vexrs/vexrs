@@ -5,8 +5,6 @@ use alloc::{vec::Vec, string::String};
 
 use crate::runtime::mutex::Mutex;
 
-use super::util::get_display;
-
 /// The width of the brain screen
 pub const BRAIN_SCREEN_WIDTH: i32 = 480;
 
@@ -285,7 +283,7 @@ pub struct Display {
 impl Display {
 
     /// Add a component to the display
-    pub fn add(&mut self, element: &Element) {
+    pub fn add(&self, element: &Element) {
         // Lock the mutex
         let mut list = self.elements.acquire();
 
@@ -303,11 +301,9 @@ impl Display {
 
     
 
-    /// Initializes the display, adding it to the global singleton
+    /// Initializes the display
     pub fn init(&self) {
         unsafe {
-            // Set the global runtime
-            super::DISPLAY = self as *const Display;
 
             // Setup the touch callback
             vexv5rt::vexTouchUserCallbackSet(Some(touch_callback));
@@ -388,16 +384,8 @@ impl Default for Display {
 
 /// The global touch callback. This will call the on_touch event on display.
 unsafe extern "C" fn touch_callback(event: u32, x: i32, y: i32) {
-    // Get the display
-    let disp = get_display();
-
-    // If it is none, just return
-    if disp.is_none() {
-        return;
-    }
-
     // Run the touch callback
-    disp.unwrap().on_touch(match event {
+    crate::DISPLAY.on_touch(match event {
         0 => TouchEvent::Release,
         1 => TouchEvent::Press,
         2 => TouchEvent::AutoPress,

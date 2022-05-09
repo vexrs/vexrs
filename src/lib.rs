@@ -49,3 +49,9 @@ pub use ceros_macro::ceros_main;
 
 // Export the macros in alloc
 pub use alloc::{format, vec};
+
+
+// Lazy_static singletons for non-mutable globals
+lazy_static::lazy_static! {
+    static ref DISPLAY: crate::hardware::display::Display = crate::hardware::display::Display::new();
+}
