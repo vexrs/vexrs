@@ -93,9 +93,7 @@ pub fn os_init(user_entry: fn()) -> ! {
 
         // Tick telemetry
         device_manager.tick_telemetry();
-
         
-
         // All loops need to yield
         get_runtime().yield_t();
     }

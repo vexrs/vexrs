@@ -307,23 +307,15 @@ impl SmartMotor {
 
     /// Returns true if the motor is over temperature
     pub fn is_over_temp(&self) -> bool {
-
-        // Lock the device
-        let _mtx = self.lock();
-
         // Get the motor faults
         let flags = self.get_faults();
-
+        
         // Check if the motor is over temperature
         (flags & MotorFaults::OverTemp as u32) != 0
     }
 
     // Returns true if the motor is over current
     pub fn is_over_current(&self) -> bool {
-
-        // Lock the device
-        let _mtx = self.lock();
-
         // Get the motor faults
         let flags = self.get_faults();
 
@@ -508,10 +500,11 @@ impl Device for SmartMotor {
     }
 
     fn tick_telemetry(&mut self) {
+        
         // Collect the statistics into a single struct
         let data = MotorData {
             encoder_units: self.get_encoder_units(),
-            current_position: self.get_position(),
+            current_position: self.get_ticks(),
             target_position: self.get_target_position(),
             raw_position: 0.0,
             break_mode: self.get_brake_mode(),
@@ -532,10 +525,7 @@ impl Device for SmartMotor {
             reversed: self.is_reversed(),
         };
 
-        // Send the data over serial
-        let mut serial = crate::hardware::serial::Serial::new();
-        let mut serial = ceros_serial::protocol::CEROSSerial::new(&mut serial);
-        serial.write_data(ceros_serial::data::DataType::KernelLog(ceros_serial::data::LogType::UpdateMotor(self.port, data)));
+        // TODO: Send telemetry over serial
     }
 }
 
