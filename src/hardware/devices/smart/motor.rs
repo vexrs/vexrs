@@ -507,7 +507,7 @@ impl Device for SmartMotor {
         self
     }
 
-    fn tick_statistics(&mut self) {
+    fn tick_telemetry(&mut self) {
         // Collect the statistics into a single struct
         let data = MotorData {
             encoder_units: self.get_encoder_units(),

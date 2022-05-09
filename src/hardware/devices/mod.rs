@@ -122,13 +122,13 @@ pub trait Device {
         locked_ports
     }
 
-    
+
 
     /// Run on every OS tick
     fn tick(&mut self) {}
 
-    /// Runs every time statistics should be updated
-    fn tick_statistics(&mut self) {}
+    /// Runs every time telemetry should be updated
+    fn tick_telemetry(&mut self) {}
 }
 
 
