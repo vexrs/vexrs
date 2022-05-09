@@ -1,5 +1,5 @@
 use crate::hardware::devices::{SmartPort, Device, SmartDevice, Encoder};
-
+use ceros_serial::data::{MotorBrakeMode, MotorGearbox, MotorEncoderUnits, MotorData};
 
 /// Enum of what faults a motor is experiencing
 #[derive(Copy, Clone)]
@@ -28,35 +28,6 @@ pub enum MotorFlags {
     ZeroPosition = 0x04,
 }
 
-/// The gearbox a motor uses
-pub enum MotorGearbox {
-    Red,
-    Green,
-    Blue
-}
-
-/// The units to use in an encoder tick
-#[derive(Default, Copy, Clone)]
-pub enum MotorEncoderUnits {
-    /// The units are in degrees
-    #[default] Degrees,
-    /// The units are in rotations
-    Rotations,
-    /// The units are in ticks
-    Ticks,
-}
-
-/// The break mode of a motor
-#[derive(Default, Copy, Clone)]
-pub enum MotorBrakeMode {
-    /// The motor will coast to a stop
-    #[default] Coast,
-    /// The motor will brake to a stop
-    Brake,
-    /// The motor will attempt to hold its current position
-    /// reacting to outside forces
-    Hold,
-}
 
 /// A basic smart motor
 #[derive(Clone)]
@@ -182,18 +153,6 @@ impl SmartMotor {
         // Get the position
         unsafe {
             vexv5rt::vexDeviceMotorPositionGet(self.get_vex_device(0))
-        }
-    }
-
-    /// Gets the motor's raw position at a given timestamp
-    pub fn get_raw_position(&self, timestamp: *mut u32) -> i32 {
-
-        // Lock the device
-        let _mtx = self.lock();
-
-        // Get the raw position
-        unsafe {
-            vexv5rt::vexDeviceMotorPositionRawGet(self.get_vex_device(0), timestamp)
         }
     }
 
@@ -546,6 +505,37 @@ impl Device for SmartMotor {
 
     fn get_any(&self) -> &dyn core::any::Any {
         self
+    }
+
+    fn tick_statistics(&mut self) {
+        // Collect the statistics into a single struct
+        let data = MotorData {
+            encoder_units: self.get_encoder_units(),
+            current_position: self.get_position(),
+            target_position: self.get_target_position(),
+            raw_position: 0.0,
+            break_mode: self.get_brake_mode(),
+            current_velocity: self.get_velocity(),
+            target_velocity: self.get_target_velocity(),
+            torque: self.get_torque(),
+            direction: self.get_direction(),
+            temperature: self.get_temperature(),
+            over_temp: self.is_over_temp(),
+            current_draw: self.get_current(),
+            current_limit: self.get_current_limit(),
+            voltage: self.get_voltage(),
+            voltage_limit: self.get_voltage_limit(),
+            power_draw: self.get_power(),
+            over_current: self.is_over_current(),
+            efficiency: self.get_efficiency(),
+            gearbox: self.get_gearbox(),
+            reversed: self.is_reversed(),
+        };
+
+        // Send the data over serial
+        let mut serial = crate::hardware::serial::Serial::new();
+        let mut serial = ceros_serial::protocol::CEROSSerial::new(&mut serial);
+        serial.write_data(ceros_serial::data::DataType::KernelLog(ceros_serial::data::LogType::UpdateMotor(self.port, data)));
     }
 }
 
