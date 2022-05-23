@@ -1,6 +1,9 @@
 #![no_std]
+#![no_main]
 
+extern crate ceros;
 
-fn main() {
-    println!("Hello, world!");
+#[no_mangle]
+extern "C" fn main() {
+    
 }
