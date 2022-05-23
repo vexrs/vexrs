@@ -10,6 +10,12 @@ mod internal;
 /// A thread implementation
 pub mod thread;
 
+lazy_static::lazy_static! {
+    /// The global runtime singleton
+    static ref RUNTIME: Runtime = Runtime::new();
+}
+
+
 /// We max out the number of threads at 8. This can be changed to support
 // custom needs
 const MAX_THREADS: usize = 8;
@@ -106,3 +112,13 @@ impl Runtime {
         }
     }
 }
+
+impl Default for Runtime {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+
+/// Force sync. This is bad practice but required for the runtime.
+unsafe impl Sync for Runtime {}

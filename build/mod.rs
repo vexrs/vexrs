@@ -70,8 +70,8 @@ fn main() -> Result<()>{
     // Find the absolute path to all required files and directories
     let libv5_library = build_dir.join(libv5_dir.clone()).join("sdk/vexv5");
     let libv5_include_library = build_dir.join(libv5_dir.clone()).join("sdk/vexv5/include");
-    let gcc_include = build_dir.join(libv5_dir.clone()).join("sdk/vexv5/gcc/include");
-    let wrapper = build_dir.join(LIBV5_LIBRARY.clone()).join("wrapper.h");
+    let gcc_include = build_dir.join(libv5_dir).join("sdk/vexv5/gcc/include");
+    let wrapper = build_dir.join(LIBV5_LIBRARY).join("wrapper.h");
     
     // Add the libv5 path to the list to search for libraries in.
     println!("cargo:rustc-link-search={}", libv5_library.display());

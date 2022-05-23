@@ -9,6 +9,7 @@ build = "build/mod.rs"
 [dependencies]
 libc = { version="0.2", features=[] }
 newlib-alloc = { version = "0.1.0" }
+lazy_static = { version = "1.4.0", features=["spin_no_std"] }
 
 [build-dependencies]
 bindgen = "0.59.2"
