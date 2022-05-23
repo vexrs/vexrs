@@ -2,6 +2,8 @@
 // Various core and alloc imports that are used by the runtime
 use core::{cell::RefCell, sync::atomic::{AtomicUsize, Ordering}};
 
+use self::thread::ThreadState;
+
 /// Private utility functions
 mod internal;
 
@@ -15,7 +17,7 @@ const MAX_THREADS: usize = 8;
 /// The runtime implementation that maintains a list of threads
 /// as well as information about the current thread and a round robin scheduler.
 /// The runtime struct uses interior mutability to allow it to be used as a static singleton.
-struct Runtime {
+pub struct Runtime {
     /// The list of currently running thread
     /// Three threads are treated specially.
     /// Thread zero is the kernel thread and when exited will kill all other threads
@@ -33,7 +35,7 @@ impl Runtime {
     /// Creates and initializes a new runtime
     pub fn new() -> Runtime {
         // Create the OS thread
-        let os = thread::Thread::new();
+        let mut os = thread::Thread::new();
 
         // Set it as running
         os.state = thread::ThreadState::Running;
@@ -60,11 +62,47 @@ impl Runtime {
         self.current.store(next, Ordering::SeqCst);
 
         // Borrow threads as mutable
-        let threads = self.threads.borrow_mut();
+        let mut threads = self.threads.borrow_mut();
+
+        // Set the current as running and the next one as ready
+        threads[current].state = ThreadState::Ready;
+        threads[next].state = ThreadState::Running;
 
         // Context switch
         unsafe {
-            threads[current].switch_from(&threads[next]);
+
+            // Context switch to the next thread. We borrow twice to allow this to happen.
+            // TODO: This is probably unsafe and should not happen. However, green-threading is mostly unsafe
+            // so this may be a compromise that needs to be made.
+            self.threads.borrow_mut()[current].switch_from(&self.threads.borrow()[next]);
+        }
+    }
+
+    /// Gets the next thread to run, returns None if it iterates back to the current thread.
+    fn get_next(&self) -> Option<usize> {
+        for (i,thread) in self.threads.borrow().iter().enumerate() {
+            match thread.state {
+                ThreadState::Ready => {
+                    return Some(i);
+                },
+                ThreadState::Running => {
+                    return None;
+                },
+                _ => {}
+            };
+        }
+
+        None
+    }
+
+    /// Yields to the next thread
+    pub fn yield_next(&self) {
+        // Get the next thread to run
+        let next = self.get_next();
+
+        // If there is a thread to switch to, then switch
+        if let Some(n) = next {
+            self.context_switch(n);
         }
     }
 }
