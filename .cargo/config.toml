@@ -2,4 +2,5 @@
 target = "build/armv7a-vex-eabi.json"
 
 [unstable]
-build-std = ["core", "alloc"]
+build-std-features = ["compiler-builtins-mem"]
+build-std = ["core", "alloc", "compiler_builtins"]
