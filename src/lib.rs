@@ -14,3 +14,4 @@ pub mod libv5rt;
 
 /// The core CEROS runtime.
 pub mod runtime;
+pub use runtime::RUNTIME;

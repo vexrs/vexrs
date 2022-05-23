@@ -2,7 +2,7 @@
 // Various core and alloc imports that are used by the runtime
 use core::{cell::RefCell, sync::atomic::{AtomicUsize, Ordering}};
 
-use self::thread::ThreadState;
+use self::thread::{ThreadState, Thread};
 
 /// Private utility functions
 mod internal;
@@ -12,7 +12,7 @@ pub mod thread;
 
 lazy_static::lazy_static! {
     /// The global runtime singleton
-    static ref RUNTIME: Runtime = Runtime::new();
+    pub static ref RUNTIME: Runtime = Runtime::new();
 }
 
 
@@ -111,6 +111,24 @@ impl Runtime {
             self.context_switch(n);
         }
     }
+
+
+    /// Spawns a new thread
+    pub fn spawn(&self, entry: fn()) {
+        // Create a new ready thread
+        let mut newt = Thread::new();
+        newt.initialize(entry);
+
+        // Find a space for it
+        for t in self.threads.borrow_mut().iter_mut() {
+            // If the thread is free then replace it
+            if let ThreadState::Available = t.state {
+                *t = newt.clone();
+            }
+        }
+
+        // If no space was found for a thread, then exit.
+    } 
 }
 
 impl Default for Runtime {
