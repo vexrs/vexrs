@@ -8,7 +8,7 @@ build = "build/mod.rs"
 
 [dependencies]
 libc = { version="0.2", features=[] }
-
+newlib-alloc = { version = "0.1.0" }
 
 [build-dependencies]
 bindgen = "0.59.2"

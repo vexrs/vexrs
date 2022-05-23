@@ -1,7 +1,5 @@
 // Contains the implementation of a thread
 
-use core::arch::arm::ST;
-
 use alloc::vec::{Vec};
 use alloc::vec;
 
@@ -12,6 +10,7 @@ pub const STACK_SIZE: usize = 0x1000; // 4 KiB for now should be plenty.
 pub enum ThreadState {
     Available,
     Ready,
+    Running,
 }
 
 
@@ -65,7 +64,7 @@ impl Thread {
     /// Switches contexts from a different thread to this thread
     /// # Safety
     /// This function does not run any checks on the state of the thread and assumes the thread's stack is setup properly.
-    pub unsafe fn switch_from(&mut self, other: &Thread) {
+    pub unsafe fn switch_from(&mut self, to: &Thread) {
         // This function will return to the new context.
         // The way this works follows:
         // 1. A program calls this function
@@ -89,8 +88,14 @@ impl Thread {
             in(reg) super::internal::guard as usize, // Store the stack guard inj a register
             out(reg) _, // A scratch register to use
             in(reg) core::ptr::addr_of!(self.stack_offset), // Store the address of the stack pointer variable in a register
-            in(reg) core::ptr::addr_of!(other.stack) as usize - other.stack_offset, // The stack pointer of the new thread
+            in(reg) core::ptr::addr_of!(to.stack) as usize - to.stack_offset, // The stack pointer of the new thread
             in(reg) core::ptr::addr_of!(self.stack) as usize + self.stack.len(), // The current stack end address
         );
+    }
+}
+
+impl Default for Thread {
+    fn default() -> Thread {
+        Thread::new()
     }
 }

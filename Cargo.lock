@@ -75,6 +75,7 @@ dependencies = [
  "dirs",
  "fs_extra",
  "libc",
+ "newlib-alloc",
 ]
 
 [[package]]
@@ -243,6 +244,15 @@ name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
+name = "newlib-alloc"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ca3abd6d23c70f63ea85deea80a6a16252967156e5220e0bb8a9d5a7de42119"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "nom"
