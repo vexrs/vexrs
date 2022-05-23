@@ -1,5 +1,7 @@
 #![no_std]
 
+extern crate alloc;
+
 pub mod panic;
 
 pub mod libv5rt;
