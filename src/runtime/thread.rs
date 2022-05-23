@@ -11,7 +11,7 @@ pub const STACK_SIZE: usize = 0x1000; // 4 KiB for now should be plenty.
 /// The state of a thread
 pub enum ThreadState {
     Available,
-    Running,
+    Ready,
 }
 
 
@@ -35,7 +35,7 @@ impl Thread {
         Thread { stack: vec![0u8; STACK_SIZE], stack_offset: 0, state: ThreadState::Available }
     }
 
-    /// Initializes the thread to be running
+    /// Initializes the thread to be ready
     pub fn initialize(&mut self, entry: fn()) {
         // Initialize a new stack
         self.stack = vec![0u8; self.stack.len()];
@@ -55,8 +55,11 @@ impl Thread {
         }
 
 
-        // Set out default offset to 15 usizes from the top (all 15 registers)
+        // Set our default offset to 15 usizes from the top (all 15 registers)
         self.stack_offset = 15;
+
+        // Set our state to ready
+        self.state = ThreadState::Ready;
     }
 
     /// Switches contexts from a different thread to this thread
