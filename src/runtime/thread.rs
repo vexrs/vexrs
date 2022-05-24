@@ -74,7 +74,7 @@ impl Thread {
     /// Switches contexts from a different thread to the stack pointer of a different thread
     /// # Safety
     /// This function assumes the stack pointer is correct.
-    pub unsafe fn switch_from(&mut self, to: usize) {
+    pub unsafe fn switch_from(&self, to: usize) {
         // This function will return to the new context.
         // The way this works follows:
         // 1. A program calls this function
@@ -83,6 +83,13 @@ impl Thread {
         // 4. This function returns to the new thread.
         // To a thread it appears as if this function simply returns and execution continues as normal. However, during the execution of this function
         // that thread is suspended.
+
+        // Get the address of the stack offset variable
+        let so_addr = core::ptr::addr_of!(self.stack_offset);
+
+        // Get the end of the current stack
+        let stack_end = core::ptr::addr_of!(self.stack) as usize + self.stack.len();
+        
         
         core::arch::asm!(
             "ldr {1}, =2f", // Load the label 2 into the scratch register (this is where we want to jump to when our thread resumes execution)
@@ -98,9 +105,9 @@ impl Thread {
             "2:",
             in(reg) super::internal::guard as usize, // Store the stack guard inj a register
             out(reg) _, // A scratch register to use
-            in(reg) core::ptr::addr_of!(self.stack_offset), // Store the address of the stack pointer variable in a register
+            in(reg) so_addr, // Store the address of the stack pointer variable in a register
             in(reg) to, // The stack pointer of the new thread
-            in(reg) core::ptr::addr_of!(self.stack) as usize + self.stack.len(), // The current stack end address
+            in(reg) stack_end, // The current stack end address
         );
         
     }

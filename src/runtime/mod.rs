@@ -1,6 +1,6 @@
 
 // Various core and alloc imports that are used by the runtime
-use core::{cell::RefCell, sync::atomic::{AtomicUsize, Ordering}};
+use core::{cell::UnsafeCell, sync::atomic::{AtomicUsize, Ordering}};
 
 use self::thread::{ThreadState, Thread};
 
@@ -31,7 +31,7 @@ pub struct Runtime {
     /// Thread one is the user thread and is restarted every time the competition mode changes.
     /// Thread two is the user tick thread and is never killed except when the kernel thread is killed/
     /// All other threads are ignored by the kernel.
-    threads: RefCell<[thread::Thread; MAX_THREADS]>,
+    threads: UnsafeCell<[thread::Thread; MAX_THREADS]>,
     /// The index of the current thread
     current: core::sync::atomic::AtomicUsize,
 }
@@ -54,54 +54,52 @@ impl Runtime {
 
         // Return the runtime
         Runtime {
-            threads: RefCell::new(threads),
+            threads: UnsafeCell::new(threads),
             current: AtomicUsize::new(0),
         }
     }
 
     /// Switches to a thread with a given index
-    fn context_switch(&self, next: usize) {
+    unsafe fn context_switch(&self, next: usize) {
         // Save the current thread
         let current = self.current.load(Ordering::SeqCst);
 
         // Update the current thread
         self.current.store(next, Ordering::SeqCst);
 
-        // Borrow threads as mutable
-        let mut threads = self.threads.borrow_mut();
+        // Get threads as mutable
+        let mut threads = self.threads.get();
 
         // Set the current as running and the next one as ready
-        threads[current].state = ThreadState::Ready;
-        threads[next].state = ThreadState::Running;
-        // Context switch
-        unsafe {
-            
-            // Context switch to the next thread. We borrow twice to allow this to happen.
-            // TODO: This is probably unsafe and should not happen. However, green-threading is mostly unsafe
-            // so this may be a compromise that needs to be made.
-            let t = threads[next].get_sp();
-            threads[current].switch_from(t);
-        }
+        (*threads)[current].state = ThreadState::Ready;
+        (*threads)[next].state = ThreadState::Running;
+
+        // Context switch to the next thread.
+        // Get the next thread's stack pointer
+        let t = (*threads)[next].get_sp();
+        
+        // Run the actual context switch
+        (*threads)[current].switch_from(t);
+        
     }
 
     /// Gets the next thread to run, returns None if it iterates back to the current thread.
     fn get_next(&self) -> Option<usize> {
         let mut i = self.current.load(Ordering::SeqCst);
-        let threads = self.threads.borrow();
+        let threads = self.threads.get();
         loop {
             i+=1;
-            if i > threads.len() {
+            if i >= unsafe {(*threads).len()} {
                 i = 0;
             }
-            match threads[i].state {
-                ThreadState::Ready => {
-                    return Some(i);
-                },
-                ThreadState::Running => {
-                    return None;
-                },
-                _ => {}
-            };
+            unsafe {
+                match (*threads)[i].state {
+                    ThreadState::Ready => {
+                        return Some(i);
+                    },
+                    _ => {}
+                };
+            }
             if i == self.current.load(Ordering::SeqCst) {
                 return None;
             }
@@ -117,7 +115,7 @@ impl Runtime {
 
         // If there is a thread to switch to, then switch
         if let Some(n) = next {
-            self.context_switch(n);
+            unsafe { self.context_switch(n); }
         }
     }
 
@@ -127,10 +125,11 @@ impl Runtime {
 
         // Find the next available thread
         let mut pos = self.current.load(Ordering::SeqCst);
-        let mut threads = self.threads.borrow_mut();
+        let threads = self.threads.get();
+
         loop {
             pos += 1;
-            if pos >= threads.len() {
+            if pos >= unsafe { (*threads).len() } {
                 pos = 0;
             }
 
@@ -139,13 +138,15 @@ impl Runtime {
                 return;
             }
 
-            if threads[pos].state == ThreadState::Available {
+            if unsafe { (*threads)[pos].state == ThreadState::Available } {
                 break;
             }
         }
 
         // Re-initialize the thread
-        threads[pos].initialize(entry);
+        unsafe {
+            (*threads)[pos].initialize(entry);
+        }
 
         
     } 
