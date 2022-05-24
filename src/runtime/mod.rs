@@ -80,14 +80,20 @@ impl Runtime {
             // Context switch to the next thread. We borrow twice to allow this to happen.
             // TODO: This is probably unsafe and should not happen. However, green-threading is mostly unsafe
             // so this may be a compromise that needs to be made.
-            self.threads.borrow_mut()[current].switch_from(&self.threads.borrow()[next]);
+            let t = threads[next].get_sp();
+            threads[current].switch_from(t);
         }
     }
 
     /// Gets the next thread to run, returns None if it iterates back to the current thread.
     fn get_next(&self) -> Option<usize> {
-        for (i,thread) in self.threads.borrow().iter().enumerate() {
-            match thread.state {
+        let mut i = self.current.load(Ordering::SeqCst);
+        loop {
+            i+=1;
+            if i > self.threads.borrow().len() {
+                i = 0;
+            }
+            match self.threads.borrow()[i].state {
                 ThreadState::Ready => {
                     return Some(i);
                 },
@@ -96,8 +102,10 @@ impl Runtime {
                 },
                 _ => {}
             };
+            if i == self.current.load(Ordering::SeqCst) {
+                return None;
+            }
         }
-
         None
     }
 
@@ -105,6 +113,8 @@ impl Runtime {
     pub fn yield_next(&self) {
         // Get the next thread to run
         let next = self.get_next();
+
+        
 
         // If there is a thread to switch to, then switch
         if let Some(n) = next {
@@ -124,6 +134,7 @@ impl Runtime {
             // If the thread is free then replace it
             if let ThreadState::Available = t.state {
                 *t = newt.clone();
+                return;
             }
         }
 

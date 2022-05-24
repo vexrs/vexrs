@@ -63,10 +63,15 @@ impl Thread {
         self.state = ThreadState::Ready;
     }
 
+    /// Gets the stack pointer of this thread
+    pub fn get_sp(&self) -> usize {
+        core::ptr::addr_of!(self.stack) as usize - self.stack_offset
+    }
+
     /// Switches contexts from a different thread to the stack pointer of a different thread
     /// # Safety
-    /// This function does not run any checks on the state of the thread and assumes the thread's stack is setup properly.
-    pub unsafe fn switch_from(&mut self, to: &Thread) {
+    /// This function assumes the stack pointer is correct.
+    pub unsafe fn switch_from(&mut self, to: usize) {
         // This function will return to the new context.
         // The way this works follows:
         // 1. A program calls this function
@@ -91,7 +96,7 @@ impl Thread {
             in(reg) super::internal::guard as usize, // Store the stack guard inj a register
             out(reg) _, // A scratch register to use
             in(reg) core::ptr::addr_of!(self.stack_offset), // Store the address of the stack pointer variable in a register
-            in(reg) core::ptr::addr_of!(to.stack) as usize - to.stack_offset, // The stack pointer of the new thread
+            in(reg) to, // The stack pointer of the new thread
             in(reg) core::ptr::addr_of!(self.stack) as usize + self.stack.len(), // The current stack end address
         );
     }

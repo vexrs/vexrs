@@ -25,10 +25,7 @@ fn task() {
 extern "C" fn main() {
     RUNTIME.spawn(task);
     loop {
-        unsafe {
-            libv5rt::vexDisplayString(1, b"Hello, World!\0".as_ptr());
-            
-        }
+        
         RUNTIME.yield_next();
     }
 }
