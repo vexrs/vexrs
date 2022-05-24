@@ -1,5 +1,7 @@
 // Contains the implementation of a thread
 
+use core::intrinsics::size_of;
+
 use alloc::vec::{Vec};
 use alloc::vec;
 
@@ -7,7 +9,7 @@ use alloc::vec;
 pub const STACK_SIZE: usize = 0x1000; // 4 KiB for now should be plenty.
 
 /// The state of a thread
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum ThreadState {
     Available,
     Ready,
@@ -39,10 +41,9 @@ impl Thread {
     /// Initializes the thread to be ready
     pub fn initialize(&mut self, entry: fn()) {
         // Initialize a new stack
-        self.stack = vec![0u8; self.stack.len()];
+        self.stack = vec![0u8; STACK_SIZE];
 
-        // Reset the current stack offset
-        self.stack_offset = 0;
+        
 
         // Get the stack top
         let top = (core::ptr::addr_of!(self.stack) as usize + self.stack.len()) as *mut usize;
@@ -54,9 +55,8 @@ impl Thread {
             // Push the guard function to prevent us from returning to null
             core::ptr::write(top.offset(-2), super::internal::guard as usize);
         }
-
-
-        // Set our default offset to 15 usizes from the top (all 15 registers)
+        
+        // Set our default offset to 15 usizes from the top (14 registers, one indexed)
         self.stack_offset = 15;
 
         // Set our state to ready
@@ -65,7 +65,10 @@ impl Thread {
 
     /// Gets the stack pointer of this thread
     pub fn get_sp(&self) -> usize {
-        core::ptr::addr_of!(self.stack) as usize - self.stack_offset
+        // Add the size of the stack to the address of the stack to get the end of the stack,
+        // and subtract the offset to get the stack pointer of this thread. We do this to assist
+        // in the case of this struct getting relocated while the thread is suspended so that we do not have to reset the stack pointer each time.
+        core::ptr::addr_of!(self.stack) as usize + self.stack.len() - self.stack_offset * size_of::<usize>()
     }
 
     /// Switches contexts from a different thread to the stack pointer of a different thread
@@ -80,16 +83,16 @@ impl Thread {
         // 4. This function returns to the new thread.
         // To a thread it appears as if this function simply returns and execution continues as normal. However, during the execution of this function
         // that thread is suspended.
-
+        
         core::arch::asm!(
             "ldr {1}, =2f", // Load the label 2 into the scratch register (this is where we want to jump to when our thread resumes execution)
             "push {{{1}}}", // Push the end label as the saved program counter
             "push {{{0}}}", // Push the guard function as the link register (this should be overwritten when a function returns)
-            "push {{r0-r12}}", // Push the general purpose registers
+            "push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12}}", // Push the general purpose registers
             "sub {4}, sp", // Convert the current stack pointer as an offset
             "str {4}, [{2}]", // Save the stack offset
             "mov sp, {3}", // Load the new stack pointer (we are now on a new stack! yay!
-            "pop {{r0-r12}}", // Pop the general purpose registers
+            "pop {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12}}", // Pop the general purpose registers
             "pop {{lr}}", // Pop the link register
             "pop {{pc}}", // Pop the program counter, finishing up the context switch
             "2:",
@@ -99,6 +102,7 @@ impl Thread {
             in(reg) to, // The stack pointer of the new thread
             in(reg) core::ptr::addr_of!(self.stack) as usize + self.stack.len(), // The current stack end address
         );
+        
     }
 }
 

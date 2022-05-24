@@ -73,10 +73,9 @@ impl Runtime {
         // Set the current as running and the next one as ready
         threads[current].state = ThreadState::Ready;
         threads[next].state = ThreadState::Running;
-
         // Context switch
         unsafe {
-
+            
             // Context switch to the next thread. We borrow twice to allow this to happen.
             // TODO: This is probably unsafe and should not happen. However, green-threading is mostly unsafe
             // so this may be a compromise that needs to be made.
@@ -88,12 +87,13 @@ impl Runtime {
     /// Gets the next thread to run, returns None if it iterates back to the current thread.
     fn get_next(&self) -> Option<usize> {
         let mut i = self.current.load(Ordering::SeqCst);
+        let threads = self.threads.borrow();
         loop {
             i+=1;
-            if i > self.threads.borrow().len() {
+            if i > threads.len() {
                 i = 0;
             }
-            match self.threads.borrow()[i].state {
+            match threads[i].state {
                 ThreadState::Ready => {
                     return Some(i);
                 },
@@ -106,7 +106,6 @@ impl Runtime {
                 return None;
             }
         }
-        None
     }
 
     /// Yields to the next thread
@@ -125,20 +124,30 @@ impl Runtime {
 
     /// Spawns a new thread
     pub fn spawn(&self, entry: fn()) {
-        // Create a new ready thread
-        let mut newt = Thread::new();
-        newt.initialize(entry);
 
-        // Find a space for it
-        for t in self.threads.borrow_mut().iter_mut() {
-            // If the thread is free then replace it
-            if let ThreadState::Available = t.state {
-                *t = newt.clone();
+        // Find the next available thread
+        let mut pos = self.current.load(Ordering::SeqCst);
+        let mut threads = self.threads.borrow_mut();
+        loop {
+            pos += 1;
+            if pos >= threads.len() {
+                pos = 0;
+            }
+
+            // If it is the same as the current, then to threads were found and we can not spawn the thread
+            if pos == self.current.load(Ordering::SeqCst) {
                 return;
+            }
+
+            if threads[pos].state == ThreadState::Available {
+                break;
             }
         }
 
-        // If no space was found for a thread, then exit.
+        // Re-initialize the thread
+        threads[pos].initialize(entry);
+
+        
     } 
 }
 
