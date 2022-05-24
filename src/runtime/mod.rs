@@ -1,8 +1,7 @@
+// A simple green threads runtime
 
-// Various core and alloc imports that are used by the runtime
 use core::{cell::UnsafeCell, sync::atomic::{AtomicUsize, Ordering}};
-
-use self::thread::{ThreadState, Thread};
+use self::thread::ThreadState;
 
 /// Private utility functions
 mod internal;
@@ -93,12 +92,9 @@ impl Runtime {
                 i = 0;
             }
             unsafe {
-                match (*threads)[i].state {
-                    ThreadState::Ready => {
-                        return Some(i);
-                    },
-                    _ => {}
-                };
+                if let ThreadState::Ready = (*threads)[i].state {
+                    return Some(i);
+                }
             }
             if i == self.current.load(Ordering::SeqCst) {
                 return None;
