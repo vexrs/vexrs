@@ -59,7 +59,7 @@ impl Runtime {
     }
 
     /// Switches to a thread with a given index
-    unsafe fn context_switch(&self, next: usize) {
+    unsafe fn context_switch(&self, next: usize, new_state: ThreadState) {
         // Save the current thread
         let current = self.current.load(Ordering::SeqCst);
 
@@ -69,10 +69,10 @@ impl Runtime {
         // Get threads as mutable
         let mut threads = self.threads.get();
 
-        // Set the current as running and the next one as ready
-        (*threads)[current].state = ThreadState::Ready;
+        // Set the current thread to the new state and the next one as running
+        (*threads)[current].state = new_state;
         (*threads)[next].state = ThreadState::Running;
-
+        
         // Context switch to the next thread.
         // Get the next thread's stack pointer
         let t = (*threads)[next].get_sp();
@@ -102,8 +102,45 @@ impl Runtime {
         }
     }
 
+    /// Wakes a task up returnign true if successful
+    pub fn wake(&self, id: usize, signal: thread::WakeupSignal) -> bool {
+        // Borrow threads as mut
+        let threads = self.threads.get();
+
+        // If the wake signal is not correct, then do not return
+        if let ThreadState::AwaitWake(s) =  unsafe { (*threads)[id].state }  {
+            if s != signal {
+                return false;
+            }
+        } else {
+            return false;
+        }
+        
+        // Update the old threads's state
+        unsafe {
+            (*threads)[id].state = ThreadState::Ready;
+        }
+
+        // Switch to it
+        unsafe {
+            self.context_switch(id, ThreadState::Ready)
+        }
+
+        true
+    }
+
     /// Yields to the next thread
     pub fn yield_next(&self) {
+        self.yield_as(ThreadState::Ready);
+    }
+
+    /// Puts the thread to sleep until a specific wake signal is recieved
+    pub fn await_wake(&self, signal: thread::WakeupSignal) {
+        self.yield_as(ThreadState::AwaitWake(signal));
+    }
+
+    /// Switches to the next context leaving this thread in a specified state
+    fn yield_as(&self, new_state: ThreadState) {
         // Get the next thread to run
         let next = self.get_next();
 
@@ -111,8 +148,15 @@ impl Runtime {
 
         // If there is a thread to switch to, then switch
         if let Some(n) = next {
-            unsafe { self.context_switch(n); }
+            unsafe { self.context_switch(n, new_state); }
         }
+        
+        // If not, then return doing nothing.
+    }
+
+    /// Gets the current task
+    pub fn current_task(&self) -> usize {
+        self.current.load(Ordering::SeqCst)
     }
 
 

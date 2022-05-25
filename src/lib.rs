@@ -16,3 +16,9 @@ pub mod libv5rt;
 /// The core CEROS runtime.
 pub mod runtime;
 pub use runtime::RUNTIME;
+
+/// Synchronization primitives that build on top of the runtime
+pub mod sync;
+
+/// A serial writer implementation
+pub mod serial;

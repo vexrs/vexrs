@@ -6,7 +6,7 @@ static ALLOCATOR: Alloc = Alloc;
 
 
 #[alloc_error_handler]
-fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
+fn alloc_error_handler(_layout: alloc::alloc::Layout) -> ! {
     // Using fmt here increases file size by ~10 Kib !
     panic!("allocation error");
     //panic!("allocation error: {:?}", layout)

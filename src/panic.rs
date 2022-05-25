@@ -7,9 +7,12 @@ use alloc::string::ToString;
 /// Called on panic. Just loops for now.
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    unsafe {
-        crate::libv5rt::vexDisplayString(1, info.to_string().as_ptr());
-        
+    crate::println!("{}", info.to_string());
+    
+    loop {
+        unsafe {
+            crate::libv5rt::vexDisplayString(1, info.to_string().as_ptr());
+            
+        }
     }
-    loop {}
 }

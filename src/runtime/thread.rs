@@ -8,12 +8,28 @@ use alloc::vec;
 /// The size of a thread's stack
 pub const STACK_SIZE: usize = 0x1000; // 4 KiB for now should be plenty.
 
+/// A wakeup signal
+#[derive(Clone, Copy, PartialEq)]
+pub enum WakeupSignal {
+    /// The task is waiting on a mutex
+    MutexRelease,
+}
+
+
 /// The state of a thread
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum ThreadState {
+    /// A task is available to be assigned
     Available,
+    /// The task is ready to be run
     Ready,
+    /// The task is currently running
     Running,
+    /// The task is waiting for a wakeup signal
+    AwaitWake(WakeupSignal),
+    /// The task is waiting for a specific time
+    AwaitTime(u32),
+
 }
 
 
@@ -92,9 +108,10 @@ impl Thread {
         
         
         core::arch::asm!(
+            "/*{0}*/",
             "ldr {1}, =2f", // Load the label 2 into the scratch register (this is where we want to jump to when our thread resumes execution)
             "push {{{1}}}", // Push the end label as the saved program counter
-            "push {{{0}}}", // Push the guard function as the link register (this should be overwritten when a function returns)
+            "push {{lr}}", // Push the link register (this should be overwritten when a function returns)
             "push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12}}", // Push the general purpose registers
             "sub {4}, sp", // Convert the current stack pointer to an offset 
             "lsr {4}, 2", // Divide the offset by four in order to get the offset in usizes.
