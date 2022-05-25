@@ -1,6 +1,6 @@
 # CEROS -- Culpeper Experimental Robotics Operating System
 
-CEROS is an experimental operating system being developed to allow robotics teams to take full advantage of the VEX V5 hardware.
+CEROS is an experimental operating system being developed to allow robotics teams to take full advantage of the VEX V5 hardware. CEROS is designed to be lightweight and offer 
 
 
 ## Disclaimer
@@ -15,20 +15,6 @@ The code contained in this branch is subject to the MIT license. The MIT license
 
 ## About
 
-This branch contains only the CEROS runtime, a lightweight green-threading runtime designed to be simple to use and understand.
-
-This is the minimal implementation of such a runtime and should be used only as reference for implementing a larger runtime. When reading the code and using the software, a few things must be noted:
-- The runtime uses an UnsafeCell. This is bad and it may be possible to circumvent this. However, due to the nature of green-threaded runtimes it is equally possible that any other method is impossible. If you happen to know a fix please file an issue, or even better submit a pull request.
-- This crate has only a few runtime dependencies. The newlib_alloc dependency can be removed if you are using your own allocator, but this is not recommended. lazy_static can be removed if you somehow find another way to have the runtime as a global singleton or if rust eventually adopts lazy_static as a builtin feature. Libc can be removed if you modify this crate to no longer depend on libv5rt.
-- The only references to libv5rt are in the panic handler (printing to screen) and in main.rs (delays and printing to screen).
-- The runtime code is not dependent on libv5rt nor does it depend on using a v5 brain. However, it *does* depend on the armv7-a target.
-
-
-Compilation Stats:
-- Dev with libv5rt: 2.2 MB elf, 106.5 kB bin
-- Dev without libv5rt: 2.2 MB elf, 87.7 kB bin
-- Release with libv5rt: 81.6 kB elf, 15.2 kB bin
-- Release without libv5rt: 75.1 kB elf, 8.8 kB bin
 
 For optimizations settings, see Cargo.toml
 
