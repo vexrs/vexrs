@@ -1,19 +1,18 @@
-use ceros_serial::{protocol::{DataType, CEROSSerial}, serial::Serial};
+// Implements a panic handler for the no_std target
 
+use core::panic::PanicInfo;
 
+use alloc::string::ToString;
 
-
+/// Called on panic. Just loops for now.
 #[panic_handler]
-fn panic(info: &core::panic::PanicInfo) -> ! {
+fn panic(info: &PanicInfo) -> ! {
+    crate::println!("{}", info.to_string());
     
-    let mut data = format!("\x07\x1b[1;31mPANIC: {}\x1b[0m\n", info);
-
-    let mut serial_port = Serial::new();
-    let mut serial = CEROSSerial::new(&mut serial_port);
-    serial.write_data(DataType::Print, data.as_bytes().to_vec());
-    
-    // Block for 50 ms to wait for the serial data to go through
-    crate::util::block(50);
-
-    loop {}
+    loop {
+        unsafe {
+            crate::libv5rt::vexDisplayString(1, info.to_string().as_ptr());
+            
+        }
+    }
 }

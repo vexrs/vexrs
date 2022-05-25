@@ -1,0 +1,9 @@
+[build]
+target = "build/armv7a-vex-eabi.json"
+
+[unstable]
+build-std-features = ["compiler-builtins-mem", "compiler-builtins-mangled-names"]
+build-std = ["core", "alloc", "compiler_builtins"]
+
+[target.armv7a-vex-eabi]
+runner = "cargo v5 cargo-hook"
