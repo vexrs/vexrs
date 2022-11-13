@@ -1,4 +1,4 @@
-# Vexrs -- Culpeper Experimental Robotics Operating System
+# Vexrs
 
 Vexrs is an experimental operating system being developed to allow robotics teams to take full advantage of the VEX V5 hardware. Vexrs is designed to be lightweight and modular.
 
