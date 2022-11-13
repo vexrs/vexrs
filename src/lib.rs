@@ -13,7 +13,7 @@ mod allocator;
 /// The automatically generated libv5rt bindings
 pub mod libv5rt;
 
-/// The core CEROS runtime.
+/// The core Vexrs runtime.
 pub mod runtime;
 pub use runtime::RUNTIME;
 

@@ -1,6 +1,6 @@
-# CEROS -- Culpeper Experimental Robotics Operating System
+# Vexrs -- Culpeper Experimental Robotics Operating System
 
-CEROS is an experimental operating system being developed to allow robotics teams to take full advantage of the VEX V5 hardware. CEROS is designed to be lightweight and offer 
+Vexrs is an experimental operating system being developed to allow robotics teams to take full advantage of the VEX V5 hardware. Vexrs is designed to be lightweight and offer 
 
 
 ## Disclaimer
