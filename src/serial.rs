@@ -95,8 +95,8 @@ macro_rules! print {
         #[allow(unused_must_use)]
         {
             let mut serial_port = $crate::serial::Serial::new();
-            let mut serial = ceros_serial::protocol::CEROSSerial::new(&mut serial_port);
-            serial.write_data(ceros_serial::data::DataType::Print(alloc::format!("{}",format_args!($($arg)*)).as_bytes().to_vec()));
+            let mut serial = vexrs_serial::protocol::VexrsSerial::new(&mut serial_port);
+            serial.write_data(vexrs_serial::data::DataType::Print(alloc::format!("{}",format_args!($($arg)*)).as_bytes().to_vec()));
         }
     };
 }
@@ -107,8 +107,8 @@ macro_rules! println {
         #[allow(unused_must_use)]
         {
             let mut serial_port = $crate::serial::Serial::new();
-            let mut serial = ceros_serial::protocol::CEROSSerial::new(&mut serial_port);
-            serial.write_data(ceros_serial::data::DataType::Print(alloc::format!("{}\n",format_args!($($arg)*)).as_bytes().to_vec()));
+            let mut serial = vexrs_serial::protocol::VexrsSerial::new(&mut serial_port);
+            serial.write_data(vexrs_serial::data::DataType::Print(alloc::format!("{}\n",format_args!($($arg)*)).as_bytes().to_vec()));
         }
     };
 }
@@ -119,8 +119,8 @@ macro_rules! eprint {
         #[allow(unused_must_use)]
         {
             let mut serial_port = $crate::serial::Serial::new();
-            let mut serial = ceros_serial::protocol::CEROSSerial::new(&mut serial_port);
-            serial.write_data(ceros_serial::data::DataType::Error(alloc::format!("{}",format_args!($($arg)*)).as_bytes().to_vec()));
+            let mut serial = vexrs_serial::protocol::VexrsSerial::new(&mut serial_port);
+            serial.write_data(vexrs_serial::data::DataType::Error(alloc::format!("{}",format_args!($($arg)*)).as_bytes().to_vec()));
         }
     };
 }
@@ -131,8 +131,8 @@ macro_rules! eprintln {
         #[allow(unused_must_use)]
         {
             let mut serial_port = $crate::serial::Serial::new();
-            let mut serial = ceros_serial::protocol::CEROSSerial::new(&mut serial_port);
-            serial.write_data(ceros_serial::data::DataType::Error(alloc::format!("{}\n",format_args!($($arg)*)).as_bytes().to_vec()));
+            let mut serial = vexrs_serial::protocol::VexrsSerial::new(&mut serial_port);
+            serial.write_data(vexrs_serial::data::DataType::Error(alloc::format!("{}\n",format_args!($($arg)*)).as_bytes().to_vec()));
         }
     };
 }

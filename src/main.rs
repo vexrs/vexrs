@@ -1,15 +1,15 @@
 #![no_std]
 #![no_main]
 
-use ceros::libv5rt;
+use vexrs::libv5rt;
 
-extern crate ceros;
+extern crate vexrs;
 extern crate alloc;
 
-use ceros::println;
+use vexrs::println;
 
-use ceros::RUNTIME;
-use ceros::sync::mutex::Mutex;
+use vexrs::RUNTIME;
+use vexrs::sync::mutex::Mutex;
 
 lazy_static::lazy_static! {
     static ref GMUTEX: Mutex<u32> = Mutex::new(0);

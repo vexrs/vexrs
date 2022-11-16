@@ -1,4 +1,4 @@
-// Use this so that crates including ceros-core will automatically use the newlib allocator
+// Use this so that crates including vexrs-core will automatically use the newlib allocator
 use newlib_alloc::Alloc;
 
 #[global_allocator]
