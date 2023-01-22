@@ -7,7 +7,7 @@ build = "build/mod.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-good_memory_allocator = "0.1.7"
+newlib-alloc = "0.1.0"
 cty = "0.2.2"
 vexrs-serial = { git = "ssh://git@github.com/vexrs/vexrs-serial", default-features = false, features = ["use_acid_io"] }
 
