@@ -7,7 +7,6 @@ use alloc::string::ToString;
 /// Called on panic. Just loops for now.
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    crate::println!("{}", info.to_string());
     
     loop {
         unsafe {

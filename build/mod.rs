@@ -91,7 +91,7 @@ fn main() -> Result<()>{
         .header(&wrapper.display().to_string())
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .use_core()
-        .ctypes_prefix("libc")
+        .ctypes_prefix("cty")
         .generate()
         .expect("Unable to generate bindings");
     

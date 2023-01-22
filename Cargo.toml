@@ -7,11 +7,10 @@ build = "build/mod.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libc = { version="0.2", features=[] }
-newlib-alloc = { version = "0.1.0" }
-lazy_static = { version = "1.4.0", features=["spin_no_std"] }
-acid_io = { git = "ssh://git@github.com/Culpeper-Robotics/acid_io.git" }
+good_memory_allocator = "0.1.7"
+cty = "0.2.2"
 vexrs-serial = { git = "ssh://git@github.com/vexrs/vexrs-serial", default-features = false, features = ["use_acid_io"] }
+
 
 [build-dependencies]
 bindgen = "0.59.2"
@@ -28,4 +27,4 @@ strip = true
 opt-level = "z"
 codegen-units = 1
 panic = "abort"
-lto = true
+lto = false

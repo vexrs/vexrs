@@ -13,12 +13,7 @@ mod allocator;
 /// The automatically generated libv5rt bindings
 pub mod libv5rt;
 
-/// The core Vexrs runtime.
-pub mod runtime;
-pub use runtime::RUNTIME;
 
-/// Synchronization primitives that build on top of the runtime
-pub mod sync;
-
-/// A serial writer implementation
-pub mod serial;
+pub fn initialize() {
+    allocator::initialize_heap();
+}
